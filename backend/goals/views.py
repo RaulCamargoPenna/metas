@@ -3,6 +3,10 @@ from goals.models import Goals, Tasks
 from goals.serializers import GoalsSerializer, TasksSerializer
 
 class GoalsListCreateView(generics.ListCreateAPIView):
-    queryset = Goals.objects.order_by('-created_at')
     serializer_class = GoalsSerializer
     
+    def get_queryset(self):
+        return Goals.objects.filter(user=self.request.user).order_by('-created_at')
+    
+    def perform_create(self, serializer):
+        return serializer.save(user=self.request.user)
