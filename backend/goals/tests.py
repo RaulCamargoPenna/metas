@@ -131,3 +131,4 @@ class GoalsEndpointTest(APITestCase):
         self.assertEqual(get.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(patch.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(delete.status_code, status.HTTP_404_NOT_FOUND)
+        

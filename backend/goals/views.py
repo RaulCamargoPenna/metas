@@ -1,6 +1,8 @@
 from rest_framework import generics
+
 from goals.models import Goals, Tasks
 from goals.serializers import GoalsSerializer, TasksSerializer
+
 
 class GoalsListCreateView(generics.ListCreateAPIView):
     serializer_class = GoalsSerializer
@@ -16,3 +18,15 @@ class GoalsRetrieveUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
     
     def get_queryset(self):
         return Goals.objects.filter(user=self.request.user)
+    
+class TasksListCreateView(generics.ListCreateAPIView):
+    serializer_class = TasksSerializer
+    
+    def get_queryset(self):
+        return Tasks.objects.filter(goal__user=self.request.user)
+
+class TasksRetrieveUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = TasksSerializer
+    
+    def get_queryset(self):
+        return Tasks.objects.filter(goal__user=self.request.user)
