@@ -9,6 +9,12 @@ class GoalsSerializer(serializers.ModelSerializer):
         fields = '__all__'
         model = Goals
         read_only_fields = ['user']
+        
+    def is_valid(self, *, raise_exception=False):
+        if 'user' in self.initial_data:
+            raise serializers.ValidationError(detail={"user": 'O usuário não pode ser alterado'}, code=400)
+        return super().is_valid(raise_exception=raise_exception)
+    
 
 class TasksSerializer(serializers.ModelSerializer):
     class Meta:

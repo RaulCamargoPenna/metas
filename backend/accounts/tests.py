@@ -12,7 +12,7 @@ class AuthTestCases(APITestCase):
         
         CustomUser.objects.create(username='Test12', password='1234')
         
-        url = reverse('register')
+        url = reverse('accounts:register')
         data={"username": 'Test12', 'password': '123'}
         
         response = self.client.post(url, data, format='json')
@@ -22,7 +22,7 @@ class AuthTestCases(APITestCase):
         
     def test_create_user(self):
         
-        url = reverse('register')
+        url = reverse('accounts:register')
         data={"username": 'Test12', 'password': '123'}
         
         response = self.client.post(url, data, format='json')
@@ -35,7 +35,7 @@ class AuthTestCases(APITestCase):
         user.set_password("1234")
         user.save()
 
-        url = reverse('token_obtain_pair')
+        url = reverse('accounts:token_obtain_pair')
         data = {"username": 'Test12', 'password': '1234'}
         
         response = self.client.post(url, data, format='json')
@@ -49,12 +49,12 @@ class AuthTestCases(APITestCase):
         user.set_password("1234")
         user.save()
 
-        url = reverse('token_obtain_pair')
+        url = reverse('accounts:token_obtain_pair')
         data = {"username": 'Test12', 'password': '1234'}
         
         response = self.client.post(url, data, format='json')
         
-        refresh_url = reverse("token_refresh")
+        refresh_url = reverse("accounts:token_refresh")
         data_refresh = {"refresh": response.json().get("refresh")}
         response_refresh = self.client.post(refresh_url, data_refresh, format='json')
 
