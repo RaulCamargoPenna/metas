@@ -1,3 +1,5 @@
+import logging
+
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import serializers
@@ -6,6 +8,8 @@ from rest_framework import exceptions
 from .models import Goals, Tasks
 from .services.progress import Goalprogress
 
+
+logger = logging.getLogger(__name__)
 
 class GoalsSerializer(serializers.ModelSerializer):
     user = serializers.CharField(source='user.username', read_only=True)
@@ -18,6 +22,7 @@ class GoalsSerializer(serializers.ModelSerializer):
         
     def is_valid(self, *, raise_exception=False):
         if 'user' in self.initial_data:
+            logger.warning("Attempting to change user",)
             raise serializers.ValidationError(detail={"user": 'O usuário não pode ser alterado'}, code=400)
         return super().is_valid(raise_exception=raise_exception)
     

@@ -118,3 +118,38 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "file": {
+            "level": os.getenv("LOGGING_LEVEL"),
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, os.getenv('LOGGING_FILE')),
+            "formatter": "verbose"
+        },
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": os.getenv("LOGGING_LEVEL"),
+            "formatter": "simple",
+        }
+    },
+    "loggers": {
+        "": {
+            "handlers": ["file", "console"],
+            "level": os.getenv("LOGGING_LEVEL"),
+            "propagate": True,
+        },
+    },
+    "formatters": {
+        "simple": {
+            "format": "{asctime}:{levelname} {message}",
+            "style": "{"
+        },
+        "verbose": {
+            "format": "{asctime}:{levelname} - {name} {module}.py (line {lineno:d}). {message}",
+            "style": "{"
+        },
+    }
+}
