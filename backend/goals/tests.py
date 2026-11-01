@@ -7,6 +7,7 @@ from rest_framework.test import APITestCase
 
 from accounts.models import CustomUser
 from goals.models import Goals, Tasks
+from goals.serializers import GoalsSerializer
 
 
 class UserGoalsTestCase(TestCase):
@@ -132,3 +133,89 @@ class GoalsEndpointTest(APITestCase):
         self.assertEqual(patch.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(delete.status_code, status.HTTP_404_NOT_FOUND)
         
+    def test_update_status_task(self):
+        login_url = reverse('accounts:token_obtain_pair')
+        login_response = self.client.post(
+            path=login_url,
+            data={
+                'username': 'Test',
+                'password': '1234'
+            },
+            format='json'
+        )
+        
+        headers = {
+            'Authorization': f'Bearer {login_response.json().get("access")}'
+        }
+        
+        url = reverse('goals:tasks_details', kwargs={"pk": self.task_goal.pk})
+        response = self.client.patch(
+            path=url,
+            data={
+                'completed': True
+            },
+            headers=headers,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotEqual(response.json().get("completed_at"), None)
+        
+        response = self.client.patch(
+            path=url,
+            data={
+                'completed': False
+            },
+            headers=headers,
+            format='json'
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json().get("completed_at"), None)
+        
+    def test_create_goal_task_other_owner(self):
+        login_url = reverse("accounts:token_obtain_pair")
+        login_response = self.client.post(
+            path=login_url,
+            data={
+                'username': 'Test',
+                'password': '1234'
+            },
+            format='json'
+        )
+        
+        url = reverse("goals:tasks")
+        headers = {
+            'Authorization': f'Bearer {login_response.json().get("access")}'
+        }
+        
+        response = self.client.post(
+            path=url,
+            data={
+                'name': 'test',
+                'goal': self.goal_2.pk,
+                'description': 'test'
+            },
+            headers=headers,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        
+class GoalProgressTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = CustomUser.objects.create(username='Test', password='1234')
+        cls.user.set_password('1234')
+        cls.user.save()
+        cls.goal = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user)
+        cls.task_goal = Tasks.objects.create(name='Tarefa', goal=cls.goal, description='teste', completed=True)
+        cls.goal_2 = Goals.objects.create(name='Meta teste 2', description='Meta teste', user=cls.user)
+        
+    def test_progress(self):
+        serializer = GoalsSerializer
+        goal_1 = serializer(self.goal).data
+        
+        self.assertEqual(goal_1['progress'], 100.0)
+        
+        goal_2 = serializer(self.goal_2).data
+        
+        self.assertEqual(goal_2['progress'], 0.0)

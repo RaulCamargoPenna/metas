@@ -1,6 +1,7 @@
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework import exceptions
 
 from .models import Goals, Tasks
 from .services.progress import Goalprogress
@@ -42,7 +43,7 @@ class TasksSerializer(serializers.ModelSerializer):
         
         request = self.context.get("request")
         if goal and goal.user != request.user:
-            raise serializers.ValidationError(detail={"goal": "Essa meta não existe."}, code=404)
+            raise exceptions.NotFound()
         
         
         return super().validate(attrs)
