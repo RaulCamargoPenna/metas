@@ -22,8 +22,8 @@ class GoalsSerializer(serializers.ModelSerializer):
         
     def is_valid(self, *, raise_exception=False):
         if 'user' in self.initial_data:
-            logger.warning("Attempting to change user",)
-            raise serializers.ValidationError(detail={"user": 'O usuário não pode ser alterado'}, code=400)
+            logger.warning("Attempting to change user")
+            raise exceptions.PermissionDenied(detail={"user": 'O usuário não pode ser alterado'})
         return super().is_valid(raise_exception=raise_exception)
     
     def get_progress(self, instance):

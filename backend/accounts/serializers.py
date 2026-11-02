@@ -5,7 +5,7 @@ from accounts.models import CustomUser
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ['username', 'first_name', 'last_name', 'email']
+        fields = ['username', 'first_name', 'last_name', 'email', 'image', 'bio']
         model = CustomUser
         
 class RegisterUserSerializer(serializers.ModelSerializer):
@@ -20,3 +20,7 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         user.save()
         
         return user
+    
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)

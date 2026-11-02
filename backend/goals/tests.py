@@ -106,7 +106,7 @@ class GoalsEndpointTest(APITestCase):
             }
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertTrue("user" in response.json())
     
     def test_unauthorized_request(self):
