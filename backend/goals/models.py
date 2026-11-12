@@ -11,6 +11,7 @@ class Goals(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    public = models.BooleanField(default=False)
     
 class Tasks(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
