@@ -1,0 +1,5 @@
+const tasks = [{ id: 1, name: 'Test Task', description: 'This is a test task', completed: false, created_at: '--', completed_at: '--' }]
+
+export function Tasks() {
+  return <div className="mt-4 overflow-x-auto rounded-2xl border border-white/80 bg-white/45 backdrop-blur-xl"><table className="w-full min-w-[620px] text-left text-xs"><thead className="border-b border-white/80 bg-white/35 text-emerald-950"><tr>{['Task Name', 'Description', 'Completed', 'Created At', 'Completed At'].map((heading) => <th className="px-4 py-3 font-bold" key={heading}>{heading}</th>)}</tr></thead><tbody>{tasks.map((task) => <tr className="border-b border-white/60 text-slate-600 last:border-b-0" key={task.id}><th className="px-4 py-4 font-semibold text-emerald-950">{task.name}</th><td className="px-4 py-4">{task.description}</td><td className="px-4 py-4">{task.completed ? 'Sim' : 'Não'}</td><td className="px-4 py-4">{task.created_at}</td><td className="px-4 py-4">{task.completed_at}</td></tr>)}</tbody></table></div>
+}

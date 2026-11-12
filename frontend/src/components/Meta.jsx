@@ -1,23 +1,6 @@
-import React from "react";
+import { glass } from '../lib/ui'
+import { Tasks } from './Tasks'
 
 export function Meta() {
-    return (
-        <div class="flex flex-col bg-card border border-card-line shadow-2xs rounded-xl w-50">
-            <div class="bg-surface border-b border-card-line rounded-t-xl py-3 px-4">
-                <p class="text-sm text-muted-foreground-1">
-                    Goal
-                </p>
-            </div>
-            <div class="p-4  ">
-                <p class="mt-1 text-muted-foreground-1">
-                    The description of the goal and other thing that you want to put here.
-                </p>
-                <a class="mt-3 inline-flex items-center gap-x-1 text-sm font-semibold rounded-lg border border-transparent text-primary decoration-2 hover:text-primary-hover hover:underline focus:underline focus:outline-hidden focus:text-primary-focus disabled:opacity-50 disabled:pointer-events-none" href="#">
-                Link to the tasks
-                <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
-                </a>
-            </div>
-        </div>
-
-    )
+  return <div className={`${glass} mx-auto max-w-xl p-6`}><h5 className="text-2xl font-extrabold tracking-tight text-emerald-950">Estudar React</h5><p className="mt-2 text-sm leading-6 text-slate-600">Entender melhor sobre componentes, hooks e demais ferramentas que o React oferece criando um app de metas.</p><p className="mt-5 text-xs font-bold text-emerald-700">Ver tarefas ↓</p><Tasks /></div>
 }

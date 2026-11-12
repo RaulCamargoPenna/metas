@@ -1,17 +1,53 @@
-import React from "react";
-import { Meta } from "../components/Meta";
+import { Link } from 'react-router'
+import { ArrowIcon, Logo, Navbar } from '../components/Navbar'
+import { glass, glassSoft, kicker, pageWidth, primaryButton, secondaryButton } from '../lib/ui'
+
+function GoalPreview() {
+  return (
+    <div className="relative mx-auto flex min-h-[540px] w-full max-w-[560px] items-center justify-center lg:min-h-[590px]" aria-label="Prévia de uma meta na plataforma">
+      <div className="absolute inset-8 rounded-full bg-emerald-200/50 blur-[65px]" />
+      <div className="absolute inset-20 rounded-full border border-white/60" />
+      <div className="absolute inset-6 rounded-full border border-white/40" />
+      <div className={`${glass} relative z-10 w-[min(100%,430px)] rotate-[2deg] overflow-hidden p-4 sm:p-5`}>
+        <div className="flex items-center justify-between px-1 pb-4 text-[10px] font-extrabold tracking-[0.18em] text-emerald-700"><span>● EM DESTAQUE</span><span className="text-slate-400">•••</span></div>
+        <div className="flex items-center gap-3 px-1 pb-4"><span className="grid h-10 w-10 place-items-center rounded-full border-2 border-white bg-violet-200 font-bold text-violet-800 shadow-md">M</span><div className="flex-1"><strong className="block text-xs">Marina Costa</strong><small className="text-[10px] text-slate-400">@marinacosta · há 2 horas</small></div><span className="rounded-full border border-emerald-200/70 bg-emerald-50/70 px-3 py-1.5 text-[10px] font-bold text-emerald-700">Seguindo</span></div>
+        <div className="relative h-48 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-200 via-teal-100 to-emerald-200 sm:h-56">
+          <div className="absolute right-8 top-6 h-28 w-28 rounded-full bg-amber-100/90 shadow-[0_0_55px_rgba(255,246,196,0.85)]" />
+          <div className="absolute -bottom-32 -left-16 h-64 w-[120%] rotate-[-12deg] rounded-[50%] bg-emerald-400/60" />
+          <div className="absolute -bottom-44 left-12 h-64 w-[120%] rotate-[14deg] rounded-[50%] bg-emerald-700/55" />
+          <p className="absolute left-7 top-13 font-serif text-4xl italic leading-none text-white drop-shadow-md">um passo<br />de cada vez<span className="text-amber-200">.</span></p>
+        </div>
+        <div className="px-1 pt-5"><span className="text-[10px] font-extrabold tracking-[0.18em] text-emerald-600">✦ BEM-ESTAR</span><h3 className="mt-2 text-base font-extrabold tracking-tight text-emerald-950">Correr meus primeiros 10 km 🏃‍♀️</h3><p className="mt-1 text-xs leading-relaxed text-slate-500">Pequenos passos, grandes conquistas. Hoje foi dia de ir mais longe!</p><div className="mt-5 flex justify-between text-[11px] text-slate-500"><span>Progresso da meta</span><strong className="text-emerald-700">72%</strong></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-emerald-100"><div className="h-full w-[72%] rounded-full bg-gradient-to-r from-emerald-300 to-emerald-600" /></div><div className="mt-5 flex justify-between border-t border-white/80 pt-4 text-[11px] font-medium text-slate-500"><span>♡ 128 curtidas</span><span>♧ 24 comentários</span><span>Compartilhar ↗</span></div></div>
+      </div>
+      <div className={`${glassSoft} absolute right-0 top-9 z-20 rotate-[6deg] px-4 py-3 text-xs font-bold text-emerald-800 sm:-right-3`}><span className="mr-2 inline-grid h-6 w-6 place-items-center rounded-lg bg-emerald-100">✓</span>Mais um passo concluído! ✦</div>
+      <div className={`${glassSoft} absolute bottom-12 left-0 z-20 rotate-[-5deg] px-4 py-3 text-xs text-emerald-950 sm:-left-4`}><span className="mr-2 inline-grid h-6 w-6 place-items-center rounded-full bg-rose-200 font-bold">L</span><strong>Lucas</strong> está torcendo por você! <span className="text-rose-400">♥</span></div>
+    </div>
+  )
+}
+
+const features = [
+  { icon: '◎', color: 'bg-violet-100/70 text-violet-600', title: 'Metas com direção', text: 'Transforme grandes planos em pequenas tarefas e acompanhe cada avanço.' },
+  { icon: '♡', color: 'bg-rose-100/70 text-rose-500', title: 'Conquistas compartilhadas', text: 'Publique suas metas, inspire outras pessoas e comemore cada vitória junto.' },
+  { icon: '✳', color: 'bg-emerald-100/70 text-emerald-600', title: 'Uma rede que apoia', text: 'Siga quem te inspira, deixe uma curtida e participe da conversa.' },
+]
 
 export function Home() {
-    return (
-        <div className="justfy-center text-center gap-2">
-            <h1 className="font-bold text-4xl text-white">Seja bem vindo à rede de Metas!</h1>
+  return (
+    <>
+      <Navbar />
+      <main>
+        <section className={`${pageWidth} grid items-center gap-8 pt-16 pb-12 lg:grid-cols-2 lg:pt-18 lg:pb-24`}>
+          <div className="relative z-10 text-center lg:text-left"><span className={`${kicker} inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-white/50 px-4 py-2 backdrop-blur-xl`}>✳ SEUS SONHOS MERECEM COMPANHIA</span><h1 className="mt-7 text-5xl font-extrabold leading-[1.12] tracking-[-0.065em] text-emerald-950 sm:text-6xl xl:text-[68px]">Suas metas vão<br /><em className="font-serif font-normal tracking-[-0.05em] text-emerald-600">mais longe com apoio.</em></h1><p className="mx-auto mt-6 max-w-lg text-base leading-8 text-slate-600 lg:mx-0">Um lugar para tirar planos do papel, acompanhar seu progresso e encontrar pessoas que torcem por cada conquista sua.</p><div className="mt-8 flex flex-col items-center gap-5 sm:flex-row sm:justify-center lg:justify-start"><Link className={primaryButton} to="/cadastro">Começar minha jornada <ArrowIcon /></Link><a className="text-sm font-bold text-emerald-900 hover:text-emerald-700" href="#como-funciona">Descubra como funciona ↗</a></div><div className="mt-12 flex items-center justify-center gap-4 lg:justify-start"><div className="flex -space-x-3">{['M', 'L', 'A', 'R'].map((letter, index) => <span key={letter} className={`grid h-9 w-9 place-items-center rounded-full border-2 border-white text-xs font-bold text-emerald-950 shadow-md ${['bg-violet-200', 'bg-rose-200', 'bg-emerald-200', 'bg-cyan-200'][index]}`}>{letter}</span>)}</div><p className="text-left text-xs leading-5 text-slate-500"><strong className="block text-emerald-950">Seu próximo passo começa aqui</strong>Compartilhe a jornada, celebre o caminho.</p></div></div>
+          <GoalPreview />
+        </section>
 
-            <div className='text-white mt-10 flex flex-col gap-10'>
-                <p>
-                    Aqui você poderá cadastrar suas metas com tarefas que precisam ser realizadas para alcança-las e também compartilhar
-                    publicamente com a rede!
-                </p>
-            </div>
-        </div>
-    )
+        <section id="como-funciona" className={`${pageWidth} scroll-mt-12 py-20 lg:py-26`}><div className="text-center"><span className={kicker}>FEITO PARA SUA JORNADA</span><h2 className="mt-4 text-4xl font-extrabold leading-tight tracking-[-0.055em] text-emerald-950 sm:text-5xl">Mais leve quando a gente<br /><em className="font-serif font-normal text-emerald-600">caminha junto.</em></h2><p className="mt-4 text-sm text-slate-500">Tudo o que você precisa para sair do “um dia eu faço” e chegar ao “eu consegui”.</p></div><div className="mt-12 grid gap-5 md:grid-cols-3">{features.map((feature, index) => <article className={`${glass} min-h-60 p-7 transition duration-300 hover:-translate-y-1`} key={feature.title}><div className="flex items-start justify-between"><span className={`grid h-13 w-13 place-items-center rounded-2xl text-3xl ${feature.color}`}>{feature.icon}</span><span className="text-xs font-bold text-slate-300">0{index + 1}</span></div><h3 className="mt-7 text-lg font-extrabold tracking-tight text-emerald-950">{feature.title}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{feature.text}</p><span className="absolute right-7 bottom-6 text-emerald-600"><ArrowIcon diagonal /></span></article>)}</div></section>
+
+        <section className={`${pageWidth} grid items-center gap-12 py-18 lg:grid-cols-2 lg:gap-24 lg:py-28`}><div><span className={kicker}>SIMPLES DE COMEÇAR</span><h2 className="mt-4 text-4xl font-extrabold leading-tight tracking-[-0.055em] text-emerald-950 sm:text-5xl">Uma ideia hoje.<br /><em className="font-serif font-normal text-emerald-600">Uma conquista amanhã.</em></h2><p className="mt-5 max-w-md text-sm leading-7 text-slate-500">Não precisa ter tudo resolvido. Dê o primeiro passo e deixe a jornada acontecer.</p><div className="mt-9 space-y-6">{[['01', 'Crie sua meta', 'Escolha o que importa para você e organize em tarefas possíveis.'], ['02', 'Compartilhe, se quiser', 'Decida o que é público e convide a comunidade para acompanhar.'], ['03', 'Avance no seu ritmo', 'Registre o progresso e celebre cada etapa concluída.']].map(([number, title, text]) => <div className="flex gap-4" key={number}><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/80 bg-emerald-100/70 text-xs font-extrabold text-emerald-700 shadow-sm">{number}</span><div><h3 className="text-sm font-extrabold text-emerald-950">{title}</h3><p className="mt-1 text-xs leading-6 text-slate-500">{text}</p></div></div>)}</div></div><div className={`${glass} relative rotate-[2deg] p-7 sm:p-9`}><div className="flex justify-between text-[10px] font-extrabold tracking-[0.18em] text-emerald-600"><span>MINHA JORNADA</span><span>✦</span></div><h3 className="mt-6 text-3xl font-extrabold leading-snug tracking-tight text-emerald-950">Aprender algo novo<br />todos os dias <span className="text-emerald-400">✳</span></h3><p className="mt-2 text-xs text-slate-500">Todo progresso merece ser visto.</p><div className="mt-8 space-y-2">{[['✓', 'Ler 15 minutos por dia', 'feito'], ['✓', 'Compartilhar um aprendizado', 'feito'], ['', 'Explorar um novo assunto', 'próximo']].map(([check, task, status]) => <div className="flex items-center gap-3 rounded-xl border border-white/80 bg-white/50 px-4 py-3 text-xs" key={task}><span className={`grid h-5 w-5 place-items-center rounded-md ${check ? 'bg-emerald-500 text-white' : 'border border-emerald-200'}`}>{check}</span><strong className="flex-1 font-semibold text-emerald-950">{task}</strong><span className="text-[10px] text-slate-400">{status}</span></div>)}</div><div className="mt-7 flex justify-between text-xs"><span className="font-bold text-emerald-700">Você está indo muito bem!</span><span className="text-slate-400">2 de 3 passos</span></div></div></section>
+
+        <section className={`${pageWidth} pb-18`}><div className="relative overflow-hidden rounded-[36px] border border-white/50 bg-gradient-to-br from-emerald-800 via-emerald-800 to-teal-700 px-6 py-16 text-center text-white shadow-[0_28px_70px_-25px_rgba(3,75,47,0.55)] sm:px-12"><div className="absolute -left-28 -top-48 h-96 w-96 rounded-full border border-white/20" /><div className="absolute -right-28 -bottom-56 h-[32rem] w-[32rem] rounded-full border border-white/20" /><div className="absolute left-1/3 top-0 h-48 w-48 rounded-full bg-emerald-200/20 blur-[60px]" /><span className="relative text-[11px] font-extrabold tracking-[0.22em] text-emerald-100">O COMEÇO É AGORA</span><h2 className="relative mt-5 text-4xl font-extrabold leading-tight tracking-[-0.055em] sm:text-5xl">Todo sonho começa<br />com <em className="font-serif font-normal text-emerald-200">um primeiro passo.</em></h2><p className="relative mt-4 text-sm text-emerald-50/80">O seu pode ser hoje. Entre e comece a construir algo incrível.</p><Link className={`${secondaryButton} relative mt-8`} to="/cadastro">Dar o primeiro passo <ArrowIcon /></Link></div></section>
+      </main>
+      <footer className={`${pageWidth} flex flex-wrap items-center justify-between gap-5 border-t border-emerald-900/10 py-8 text-xs text-slate-400`}><Logo /><span>Pequenos passos. Grandes histórias.</span><span>© {new Date().getFullYear()} metas.</span></footer>
+    </>
+  )
 }
