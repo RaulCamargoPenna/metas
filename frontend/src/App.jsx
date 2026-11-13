@@ -13,10 +13,10 @@ export function App() {
     function syncSession(event) {
       if (event.storageArea !== localStorage || event.key !== 'metas_refresh_token') return
       const signedIn = hasSession()
-      if (!signedIn && (location.pathname === '/perfil' || location.pathname.startsWith('/metas'))) {
+      if (!signedIn && (location.pathname === '/perfil' || location.pathname.startsWith('/metas') || location.pathname.startsWith('/feed'))) {
         navigate('/login', { replace: true })
       } else if (signedIn && (location.pathname === '/login' || location.pathname === '/cadastro')) {
-        navigate('/perfil', { replace: true })
+        navigate('/feed', { replace: true })
       } else {
         refreshNavigation((value) => value + 1)
       }

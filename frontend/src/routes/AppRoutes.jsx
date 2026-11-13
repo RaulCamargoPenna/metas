@@ -7,6 +7,8 @@ import { Profile } from '../pages/Profile'
 import { Goals, NewGoal } from '../pages/Goals'
 import { GoalDetail } from '../pages/GoalDetail'
 import { Register } from '../pages/Register'
+import { Feed } from '../pages/Feed'
+import { PublicGoalDetail } from '../pages/PublicGoalDetail'
 
 export function AppRoutes() {
   return (
@@ -18,6 +20,8 @@ export function AppRoutes() {
       <Route path="/metas" element={<Goals />} />
       <Route path="/metas/nova" element={<NewGoal />} />
       <Route path="/metas/:goalId" element={<GoalDetail />} />
+      <Route path="/feed" element={<Feed />} />
+      <Route path="/feed/:goalId" element={<PublicGoalDetail />} />
       <Route path="/about" element={<About />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

@@ -36,17 +36,17 @@ describe('rotas públicas', () => {
 })
 
 describe('login', () => {
-  it('envia as credenciais e abre o perfil autenticado', async () => {
+  it('envia as credenciais e abre o feed autenticado', async () => {
     const browser = userEvent.setup()
     mockFetch({
       'POST /api/v1/token': json({ access: 'access', refresh: 'refresh' }),
-      'GET /api/v1/user': json(user),
+      'GET /api/v1/feed': json({ results: [], next: null }),
     })
     renderAt('/login')
     await browser.type(screen.getByLabelText('Nome de usuário'), 'ana')
     await browser.type(screen.getByLabelText('Senha'), 'senha123')
     await browser.click(screen.getByRole('button', { name: 'Entrar na minha conta' }))
-    expect(await screen.findByRole('heading', { name: /Seu espaço, sua história/ })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Metas da comunidade' })).toBeInTheDocument()
     expect(localStorage.getItem('metas_refresh_token')).toBe('refresh')
   })
 
@@ -61,12 +61,12 @@ describe('login', () => {
     expect(screen.getByRole('link', { name: 'Crie sua conta' })).toHaveAttribute('href', '/cadastro')
   })
 
-  it('abre o perfil quando outra aba faz login', async () => {
-    mockFetch({ 'GET /api/v1/user': json(user) })
+  it('abre o feed quando outra aba faz login', async () => {
+    mockFetch({ 'GET /api/v1/feed': json({ results: [], next: null }) })
     renderAt('/login')
     signedIn()
     window.dispatchEvent(new StorageEvent('storage', { key: 'metas_refresh_token', newValue: 'refresh-test', storageArea: localStorage }))
-    expect(await screen.findByRole('heading', { name: /Seu espaço, sua história/ })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Metas da comunidade' })).toBeInTheDocument()
   })
 
   it('volta ao login quando outra aba encerra a sessão', async () => {
@@ -90,12 +90,12 @@ describe('cadastro', () => {
         return json(user, 201)
       },
       'POST /api/v1/token': json({ access: 'access', refresh: 'refresh' }),
-      'GET /api/v1/user': json(user),
+      'GET /api/v1/feed': json({ results: [], next: null }),
     })
     renderAt('/cadastro')
     await fillRegistration(browser)
     await browser.click(screen.getByRole('button', { name: 'Criar minha conta' }))
-    expect(await screen.findByDisplayValue('Ana')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Metas da comunidade' })).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 

@@ -29,10 +29,10 @@ export function GoalDetail() {
     let active = true
     async function load() {
       try {
-        const [goalResponse, allTasks] = await Promise.all([apiRequest(`/goals/${goalId}`), fetchCollection('/tasks')])
+        const [goalResponse, goalTasks] = await Promise.all([apiRequest(`/goals/${goalId}`), fetchCollection(`/tasks?goal=${encodeURIComponent(goalId)}`)])
         if (!goalResponse.ok) throw new Error(goalResponse.status === 404 ? 'Meta não encontrada.' : await readApiError(goalResponse, 'Não foi possível carregar a meta.'))
         const goalData = await goalResponse.json()
-        if (active) { setGoal(goalData); setTasks(sortTasks(allTasks.filter((task) => String(task.goal) === goalId))) }
+        if (active) { setGoal(goalData); setTasks(sortTasks(goalTasks)) }
       } catch (error) {
         if (!active) return
         if (error instanceof SessionExpiredError) navigate('/login', { replace: true })

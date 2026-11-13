@@ -18,6 +18,7 @@ export function DashboardHeader() {
       <div className={`${glassSoft} flex min-h-18 flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6`}>
         <Logo />
         <nav className="order-3 flex w-full items-center gap-5 overflow-x-auto text-xs font-bold sm:order-2 sm:w-auto sm:gap-8" aria-label="Navegação da conta">
+          <NavLink to="/feed" className={navClass}>Feed</NavLink>
           <NavLink to="/metas" end className={navClass}>Minhas metas</NavLink>
           <NavLink to="/perfil" className={navClass}>Meu perfil</NavLink>
           <Link to="/" className="whitespace-nowrap text-slate-500 transition hover:text-emerald-800">Início</Link>

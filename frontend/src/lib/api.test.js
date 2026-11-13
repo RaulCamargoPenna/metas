@@ -64,6 +64,15 @@ describe('sessão e cliente da API', () => {
     })
     expect(await fetchCollection('/goals')).toEqual([{ id: 'one' }, { id: 'two' }])
   })
+
+  it('preserva filtros ao percorrer páginas de uma lista', async () => {
+    saveSession({ access: 'access', refresh: 'refresh' })
+    mockFetch({
+      'GET /api/v1/tasks?goal=g1': json({ results: [{ id: 'one' }], next: 'http://localhost/api/v1/tasks?goal=g1&page=2' }),
+      'GET /api/v1/tasks?goal=g1&page=2': json({ results: [{ id: 'two' }], next: null }),
+    })
+    expect(await fetchCollection('/tasks?goal=g1')).toEqual([{ id: 'one' }, { id: 'two' }])
+  })
 })
 
 describe('autenticação pública', () => {

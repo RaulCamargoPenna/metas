@@ -38,7 +38,7 @@ export function Register() {
     }
     try {
       await login(username, password)
-      navigate('/perfil', { replace: true })
+      navigate('/feed', { replace: true })
     } catch {
       navigate('/login', { replace: true, state: { registered: true } })
     } finally {
@@ -46,7 +46,7 @@ export function Register() {
     }
   }
 
-  if (hasSession()) return <Navigate to="/perfil" replace />
+  if (hasSession()) return <Navigate to="/feed" replace />
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">

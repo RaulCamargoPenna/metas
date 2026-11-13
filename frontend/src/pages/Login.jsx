@@ -20,7 +20,7 @@ export function Login() {
     setSubmitting(true)
     try {
       await login(username.trim(), password)
-      navigate('/perfil', { replace: true })
+      navigate('/feed', { replace: true })
     } catch (caughtError) {
       setError(caughtError instanceof TypeError ? 'Não foi possível conectar ao servidor. Verifique se a API está disponível.' : caughtError.message)
     } finally {
@@ -28,7 +28,7 @@ export function Login() {
     }
   }
 
-  if (hasSession()) return <Navigate to="/perfil" replace />
+  if (hasSession()) return <Navigate to="/feed" replace />
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">

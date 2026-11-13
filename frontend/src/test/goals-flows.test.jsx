@@ -39,7 +39,7 @@ describe('minhas metas', () => {
         return json(created, 201)
       },
       'GET /api/v1/goals/g1': json(created),
-      'GET /api/v1/tasks': json({ results: [], next: null }),
+      'GET /api/v1/tasks?goal=g1': json({ results: [], next: null }),
     })
     renderAt('/metas/nova')
     await browser.type(screen.getByLabelText('Nome da meta'), 'Aprender React')
@@ -66,11 +66,11 @@ describe('minhas metas', () => {
 })
 
 describe('tarefas e visibilidade de uma meta', () => {
-  it('mostra somente as tarefas da meta aberta', async () => {
+  it('busca tarefas filtradas pela meta aberta', async () => {
     signedIn()
     mockFetch({
       'GET /api/v1/goals/g1': json(goal),
-      'GET /api/v1/tasks': json({ results: [firstTask, { ...firstTask, id: 't2', goal: 'g2', name: 'Tarefa de outra meta' }], next: null }),
+      'GET /api/v1/tasks?goal=g1': json({ results: [firstTask], next: null }),
     })
     renderAt('/metas/g1')
     expect(await screen.findByRole('heading', { name: 'Correr 3 km' })).toBeInTheDocument()
@@ -83,7 +83,7 @@ describe('tarefas e visibilidade de uma meta', () => {
     let goalReads = 0
     mockFetch({
       'GET /api/v1/goals/g1': () => json({ ...goal, progress: goalReads++ ? 50 : 0 }),
-      'GET /api/v1/tasks': json({ results: [firstTask], next: null }),
+      'GET /api/v1/tasks?goal=g1': json({ results: [firstTask], next: null }),
       'POST /api/v1/tasks': (options) => {
         expect(JSON.parse(options.body)).toEqual({ goal: 'g1', name: 'Correr 5 km', description: 'Aumentar a distância' })
         return json({ ...firstTask, id: 't2', name: 'Correr 5 km', description: 'Aumentar a distância' }, 201)
@@ -104,7 +104,7 @@ describe('tarefas e visibilidade de uma meta', () => {
     const browser = userEvent.setup()
     mockFetch({
       'GET /api/v1/goals/g1': json(goal),
-      'GET /api/v1/tasks': json({ results: [], next: null }),
+      'GET /api/v1/tasks?goal=g1': json({ results: [], next: null }),
       'POST /api/v1/tasks': json({ name: ['Nome inválido.'] }, 400),
     })
     renderAt('/metas/g1')
@@ -122,7 +122,7 @@ describe('tarefas e visibilidade de uma meta', () => {
     let goalReads = 0
     mockFetch({
       'GET /api/v1/goals/g1': () => json({ ...goal, progress: goalReads++ ? 100 : 0 }),
-      'GET /api/v1/tasks': json({ results: [firstTask], next: null }),
+      'GET /api/v1/tasks?goal=g1': json({ results: [firstTask], next: null }),
       'PATCH /api/v1/tasks/t1': (options) => {
         expect(JSON.parse(options.body)).toEqual({ completed: true })
         return json({ ...firstTask, completed: true })
@@ -139,7 +139,7 @@ describe('tarefas e visibilidade de uma meta', () => {
     const browser = userEvent.setup()
     mockFetch({
       'GET /api/v1/goals/g1': json(goal),
-      'GET /api/v1/tasks': json({ results: [], next: null }),
+      'GET /api/v1/tasks?goal=g1': json({ results: [], next: null }),
       'PATCH /api/v1/goals/g1': (options) => {
         expect(JSON.parse(options.body)).toEqual({ public: true })
         return json({ ...goal, public: true })
@@ -156,7 +156,7 @@ describe('tarefas e visibilidade de uma meta', () => {
     const browser = userEvent.setup()
     mockFetch({
       'GET /api/v1/goals/g1': json(goal),
-      'GET /api/v1/tasks': json({ results: [], next: null }),
+      'GET /api/v1/tasks?goal=g1': json({ results: [], next: null }),
       'PATCH /api/v1/goals/g1': json({ public: ['Alteração recusada.'] }, 400),
     })
     renderAt('/metas/g1')

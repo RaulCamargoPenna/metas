@@ -29,10 +29,11 @@ export function Navbar() {
     <header className={`${pageWidth} pt-5`}>
       <nav className={`${glassSoft} flex min-h-18 items-center justify-between gap-5 px-4 sm:px-6`} aria-label="Navegação principal">
         <Logo />
-        <div className="hidden items-center gap-8 text-xs font-bold text-slate-500 md:flex">
+        <div className="hidden items-center gap-6 text-xs font-bold text-slate-500 lg:flex">
           <NavLink className={({ isActive }) => isActive ? 'text-emerald-800' : 'transition hover:text-emerald-800'} to="/" end>Início</NavLink>
           <a className="transition hover:text-emerald-800" href="/#como-funciona">Como funciona</a>
           <NavLink className={({ isActive }) => isActive ? 'text-emerald-800' : 'transition hover:text-emerald-800'} to="/about">Sobre</NavLink>
+          {signedIn && <NavLink className={({ isActive }) => isActive ? 'text-emerald-800' : 'transition hover:text-emerald-800'} to="/feed">Feed</NavLink>}
           {signedIn && <NavLink className={({ isActive }) => isActive ? 'text-emerald-800' : 'transition hover:text-emerald-800'} to="/metas">Minhas metas</NavLink>}
         </div>
         <Link to={signedIn ? '/perfil' : '/login'} className={`${primaryButton} px-4 py-3 sm:px-5`}>{signedIn ? 'Meu perfil' : 'Entrar'} <ArrowIcon /></Link>

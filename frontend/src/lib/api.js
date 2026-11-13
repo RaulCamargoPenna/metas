@@ -122,10 +122,12 @@ export async function readApiError(response, fallback) {
 
 export async function fetchCollection(path) {
   const items = []
-  let query = ''
+  const queryStart = path.indexOf('?')
+  const basePath = queryStart === -1 ? path : path.slice(0, queryStart)
+  let query = queryStart === -1 ? '' : path.slice(queryStart)
 
   do {
-    const response = await apiRequest(`${path}${query}`)
+    const response = await apiRequest(`${basePath}${query}`)
     if (!response.ok) throw new Error(await readApiError(response, 'Não foi possível carregar os dados.'))
     const data = await response.json()
     if (Array.isArray(data)) return data
