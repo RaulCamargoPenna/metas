@@ -55,13 +55,13 @@ class GoalsEndpointTest(APITestCase):
         cls.user = CustomUser.objects.create(username='Test', password='1234')
         cls.user.set_password('1234')
         cls.user.save()
-        cls.goal = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user)
+        cls.goal = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user, public=True)
         cls.task_goal = Tasks.objects.create(name='Tarefa', goal=cls.goal, description='teste')
         
         cls.user_2 = CustomUser.objects.create(username='Test-2', password='1234')
         cls.user_2.set_password('1234')
         cls.user_2.save()
-        cls.goal_2 = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user_2)
+        cls.goal_2 = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user_2, public=True)
         cls.task_goal_2 = Tasks.objects.create(name='Tarefa', goal=cls.goal_2, description='teste')
     
     def test_whithout_auth(self):
@@ -199,6 +199,22 @@ class GoalsEndpointTest(APITestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+       
+    def test_feed_public_goals(self):
+        auth_url = reverse('accounts:token_obtain_pair')
+        login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
+        
+        url = reverse('goals:feed')
+        response = self.client.get(
+            url,
+            headers={
+                "Authorization": f"Bearer {login.json().get("access")}"
+            }
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for item in response.json().get("results"):
+            self.assertEqual(item.get("public"), True)
         
 class GoalProgressTest(TestCase):
     @classmethod

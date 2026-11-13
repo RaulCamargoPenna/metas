@@ -14,11 +14,12 @@ logger = logging.getLogger(__name__)
 class GoalsSerializer(serializers.ModelSerializer):
     user = serializers.CharField(source='user.username', read_only=True)
     progress = serializers.SerializerMethodField(read_only=True)
+    image = serializers.FileField(source='user.image', read_only=True)
     
     class Meta:
-        fields = '__all__'
+        fields = ['id', 'name', 'description', 'created_at', 'user', 'public', 'image', 'progress']
         model = Goals
-        read_only_fields = ['user', 'progress']
+        read_only_fields = ['user', 'progress', 'image']
         
     def is_valid(self, *, raise_exception=False):
         if 'user' in self.initial_data:
@@ -62,3 +63,27 @@ class TasksSerializer(serializers.ModelSerializer):
                 validated_data['completed_at'] = None            
             
         return super().update(instance, validated_data)
+    
+class PublicGoalsSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(source='user.username', read_only=True)
+    progress = serializers.SerializerMethodField(read_only=True)
+    image = serializers.FileField(source='user.image', read_only=True)
+    tasks = TasksSerializer(many=True)
+    
+    class Meta:
+        model = Goals
+        fields = [field.name for field in model._meta.fields] + ['image', 'progress', 'tasks']
+        read_only_fields = ['user', 'progress', 'image']
+        
+    def is_valid(self, *, raise_exception=False):
+        if 'user' in self.initial_data:
+            logger.warning("Attempting to change user")
+            raise exceptions.PermissionDenied(detail={"user": 'O usuário não pode ser alterado'})
+        return super().is_valid(raise_exception=raise_exception)
+    
+    def get_progress(self, instance):
+        
+        tasks = instance.tasks.aggregate(total=Count("id"), completed_tasks=Count('id', filter=Q(completed=True)))
+        progress = Goalprogress(total=tasks['total'], completed=tasks['completed_tasks'])
+
+        return progress.progress()
