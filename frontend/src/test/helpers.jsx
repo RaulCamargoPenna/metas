@@ -15,7 +15,12 @@ export function mockFetch(handlers) {
     if (!handler) throw new Error(`Requisição inesperada: ${key}`)
     return typeof handler === 'function' ? handler(options, url) : handler
   })
-  vi.stubGlobal('fetch', fetchMock)
+  vi.stubGlobal('fetch', (input, options = {}) => {
+    const url = new URL(input, window.location.origin)
+    const key = `${options.method || 'GET'} ${url.pathname}${url.search}`
+    if (key === 'GET /api/v1/notifications?read=false' && !handlers[key]) return Promise.resolve(json({ results: [], next: null }))
+    return fetchMock(input, options)
+  })
   return fetchMock
 }
 

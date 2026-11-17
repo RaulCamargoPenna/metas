@@ -1,6 +1,7 @@
 import { Link, NavLink } from 'react-router'
 import { hasSession } from '../lib/api'
 import { glassSoft, pageWidth, primaryButton } from '../lib/ui'
+import { NotificationBell } from './NotificationBell'
 
 export function Logo({ compact = false }) {
   return (
@@ -26,7 +27,7 @@ export function ArrowIcon({ diagonal = false }) {
 export function Navbar() {
   const signedIn = hasSession()
   return (
-    <header className={`${pageWidth} pt-5`}>
+    <header className={`${pageWidth} relative z-50 pt-5`}>
       <nav className={`${glassSoft} flex min-h-18 items-center justify-between gap-5 px-4 sm:px-6`} aria-label="Navegação principal">
         <Logo />
         <div className="hidden items-center gap-6 text-xs font-bold text-slate-500 lg:flex">
@@ -36,7 +37,7 @@ export function Navbar() {
           {signedIn && <NavLink className={({ isActive }) => isActive ? 'text-emerald-800' : 'transition hover:text-emerald-800'} to="/feed">Feed</NavLink>}
           {signedIn && <NavLink className={({ isActive }) => isActive ? 'text-emerald-800' : 'transition hover:text-emerald-800'} to="/metas">Minhas metas</NavLink>}
         </div>
-        <Link to={signedIn ? '/perfil' : '/login'} className={`${primaryButton} px-4 py-3 sm:px-5`}>{signedIn ? 'Meu perfil' : 'Entrar'} <ArrowIcon /></Link>
+        <div className="flex items-center gap-2">{signedIn && <NotificationBell />}<Link to={signedIn ? '/perfil' : '/login'} className={`${primaryButton} px-4 py-3 sm:px-5`}>{signedIn ? 'Meu perfil' : 'Entrar'} <ArrowIcon /></Link></div>
       </nav>
     </header>
   )

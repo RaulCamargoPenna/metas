@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { json, mockFetch, renderAt, signedIn } from './helpers'
@@ -66,6 +66,46 @@ describe('minhas metas', () => {
 })
 
 describe('tarefas e visibilidade de uma meta', () => {
+  it('pede confirmação antes de excluir a meta e volta para a lista após sucesso', async () => {
+    signedIn()
+    const browser = userEvent.setup()
+    const fetchMock = mockFetch({
+      'GET /api/v1/goals/g1': json(goal),
+      'GET /api/v1/tasks?goal=g1': json({ results: [], next: null }),
+      'DELETE /api/v1/goals/g1': new Response(null, { status: 204 }),
+      'GET /api/v1/goals': json({ results: [], next: null }),
+    })
+    renderAt('/metas/g1')
+    await screen.findByRole('heading', { name: 'Correr 10 km' })
+    await browser.click(screen.getByRole('button', { name: 'Excluir meta' }))
+    const dialog = screen.getByRole('alertdialog')
+    expect(dialog).toHaveTextContent('A meta “Correr 10 km” e suas tarefas serão removidas.')
+    expect(fetchMock.mock.calls.some(([, options]) => options?.method === 'DELETE')).toBe(false)
+    await browser.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    await browser.click(screen.getByRole('button', { name: 'Excluir meta' }))
+    await browser.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir meta' }))
+    expect(await screen.findByRole('heading', { name: 'O primeiro passo é seu.' })).toBeInTheDocument()
+    expect(fetchMock.mock.calls.filter(([, options]) => options?.method === 'DELETE')).toHaveLength(1)
+  })
+
+  it('mantém a meta aberta e mostra o erro quando a exclusão falha', async () => {
+    signedIn()
+    const browser = userEvent.setup()
+    mockFetch({
+      'GET /api/v1/goals/g1': json(goal),
+      'GET /api/v1/tasks?goal=g1': json({ results: [], next: null }),
+      'DELETE /api/v1/goals/g1': json({ detail: 'Não é possível excluir esta meta.' }, 400),
+    })
+    renderAt('/metas/g1')
+    await screen.findByRole('heading', { name: 'Correr 10 km' })
+    await browser.click(screen.getByRole('button', { name: 'Excluir meta' }))
+    const dialog = screen.getByRole('alertdialog')
+    await browser.click(within(dialog).getByRole('button', { name: 'Excluir meta' }))
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Não é possível excluir esta meta.')
+    expect(screen.getByRole('heading', { name: 'Correr 10 km' })).toBeInTheDocument()
+  })
+
   it('busca tarefas filtradas pela meta aberta', async () => {
     signedIn()
     mockFetch({

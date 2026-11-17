@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router'
 import { ArrowIcon, Logo } from '../components/Navbar'
+import { NotificationBell } from '../components/NotificationBell'
 import { apiRequest, clearSession, hasSession, readApiError, SessionExpiredError } from '../lib/api'
 import { field, fieldLabel, formError, formSuccess, glass, kicker, pageWidth, primaryButton } from '../lib/ui'
 
@@ -110,7 +111,7 @@ export function Profile() {
 
   return (
     <div className="min-h-screen pb-20">
-      <header className={`${pageWidth} flex min-h-24 items-center justify-between gap-4 border-b border-emerald-900/10`}><Logo /><div className="flex flex-wrap items-center justify-end gap-3 text-xs font-bold text-emerald-950/65 sm:gap-6"><Link to="/feed" className="hover:text-emerald-800">Feed</Link><Link to="/metas" className="hover:text-emerald-800">Minhas metas</Link><Link to="/" className="hover:text-emerald-800">Início</Link><button type="button" onClick={signOut} className="hover:text-emerald-800">Sair da conta</button></div></header>
+      <header className={`${pageWidth} relative z-50 flex min-h-24 items-center justify-between gap-4 border-b border-emerald-900/10`}><Logo /><div className="flex flex-wrap items-center justify-end gap-3 text-xs font-bold text-emerald-950/65 sm:gap-6"><Link to="/feed" className="hover:text-emerald-800">Feed</Link><Link to="/metas" className="hover:text-emerald-800">Minhas metas</Link><Link to="/" className="hover:text-emerald-800">Início</Link><NotificationBell /><button type="button" onClick={signOut} className="hover:text-emerald-800">Sair da conta</button></div></header>
       <main className={`${pageWidth} pt-12`}><div className="mb-9"><span className={kicker}>MINHA CONTA</span><h1 className="mt-3 text-4xl font-extrabold tracking-[-0.06em] text-emerald-950 sm:text-5xl">Seu espaço, <em className="font-serif font-normal text-emerald-600">sua história.</em></h1><p className="mt-3 text-sm text-slate-500">Cuide das suas informações para seguir construindo a sua jornada.</p></div>
         {loading ? <div className={`${glass} grid min-h-52 place-items-center text-sm text-slate-500`} role="status">Carregando seu perfil...</div> : loadError ? <div className={`${glass} flex min-h-52 flex-col items-center justify-center gap-4 p-8 text-sm text-rose-700`} role="alert"><p>{loadError}</p><button type="button" className={primaryButton} onClick={() => window.location.reload()}>Tentar novamente</button></div> : (
           <div className="grid items-start gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">

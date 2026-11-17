@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router'
 import { DashboardHeader } from '../components/DashboardHeader'
+import { GoalLikeButton } from '../components/GoalLikeButton'
 import { ArrowIcon } from '../components/Navbar'
 import { UserAvatar } from '../components/UserAvatar'
 import { fetchCollection, hasSession, SessionExpiredError } from '../lib/api'
@@ -19,7 +20,7 @@ export function PublicGoalCard({ goal }) {
         <span className="rounded-full border border-emerald-200/70 bg-emerald-100/70 px-3 py-1.5 text-[10px] font-extrabold text-emerald-800">✦ Pública</span>
       </div>
       <div className="relative mt-6 overflow-hidden rounded-[22px] border border-white/65 bg-gradient-to-br from-emerald-100/65 via-white/55 to-violet-100/65 p-5 backdrop-blur-xl"><span className="absolute -right-5 -top-9 text-[120px] leading-none text-emerald-200/40" aria-hidden="true">✳</span><h2 className="relative line-clamp-2 text-xl font-extrabold leading-snug tracking-tight text-emerald-950">{goal.name}</h2><p className="relative mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{goal.description}</p></div>
-      <div className="mt-auto pt-6"><div className="flex items-center justify-between text-xs"><span className="font-semibold text-slate-500">Progresso da meta</span><strong className="text-emerald-700">{Math.round(progress)}%</strong></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-emerald-100/80"><span className="block h-full rounded-full bg-gradient-to-r from-emerald-300 to-emerald-600" style={{ width: `${progress}%` }} /></div><div className="mt-5 flex items-center justify-between border-t border-white/80 pt-4"><time dateTime={goal.created_at} className="text-[11px] text-slate-500">{dateFormatter.format(new Date(goal.created_at))}</time><Link to={`/feed/${goal.id}`} className="inline-flex items-center gap-2 text-xs font-extrabold text-emerald-800 transition hover:text-emerald-600">Ver meta <ArrowIcon diagonal /></Link></div></div>
+      <div className="mt-auto pt-6"><div className="flex items-center justify-between text-xs"><span className="font-semibold text-slate-500">Progresso da meta</span><strong className="text-emerald-700">{Math.round(progress)}%</strong></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-emerald-100/80"><span className="block h-full rounded-full bg-gradient-to-r from-emerald-300 to-emerald-600" style={{ width: `${progress}%` }} /></div><div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/80 pt-4"><GoalLikeButton goalId={goal.id} totalLikes={goal.total_likes} alreadyLiked={goal.already_liked} /><Link to={`/feed/${goal.id}#comments`} className="text-xs font-extrabold text-emerald-800 hover:text-emerald-600">Comentar</Link></div><div className="mt-4 flex items-center justify-between"><time dateTime={goal.created_at} className="text-[11px] text-slate-500">{dateFormatter.format(new Date(goal.created_at))}</time><Link to={`/feed/${goal.id}`} className="inline-flex items-center gap-2 text-xs font-extrabold text-emerald-800 transition hover:text-emerald-600">Ver meta <ArrowIcon diagonal /></Link></div></div>
     </article>
   )
 }
