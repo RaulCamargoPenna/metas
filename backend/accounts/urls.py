@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .views import CustomChangePasswordView, UserRegisterView, UserRetrieveUptade
+from .views import CustomChangePasswordView, UserRegisterView, UserRetrieveUptade, NotificationsListView, NotificationsUpdateView
 
 app_name = 'accounts'
 
@@ -11,4 +11,6 @@ urlpatterns = [
     path('token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path('user', UserRetrieveUptade.as_view(), name='user_details'),
     path('change/password', CustomChangePasswordView.as_view(), name='change_password'),
+    path('notifications', NotificationsListView.as_view(), name='notifications'),
+    path('notifications/<str:pk>', NotificationsUpdateView.as_view(), name='notifications_update'),
 ]

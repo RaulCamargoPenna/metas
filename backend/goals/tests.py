@@ -5,7 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from accounts.models import CustomUser
+from accounts.models import CustomUser, Notifications
 from goals.models import Goals, Tasks, Likes
 from goals.serializers import GoalsSerializer, PublicGoalsSerializer
 
@@ -286,6 +286,9 @@ class LikesCommentsEndpointTest(TestCase):
         goal_info = serializer(self.goal).data
         
         self.assertEqual(goal_info['total_likes'], 1)
+        
+        self.assertEqual(Notifications.objects.filter(user=self.user.pk).count(), 1)
+        self.assertEqual(Notifications.objects.get(user=self.user.pk).description, 'Test liked your goal Meta teste')
     
     def test_like_goal_already_liked(self):
         Likes.objects.create(user=self.user_2, goal=self.goal)
@@ -322,6 +325,9 @@ class LikesCommentsEndpointTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 201)
+        
+        self.assertEqual(Notifications.objects.filter(user=self.user.pk).count(), 1)
+        self.assertEqual(Notifications.objects.get(user=self.user.pk).description, 'Test-2 commented your goal Meta teste')
         
     def test_comment_private_goal(self):
         Likes.objects.create(user=self.user_2, goal=self.goal)

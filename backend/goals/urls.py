@@ -1,6 +1,8 @@
 from django.urls import path
 
 from goals.views import (
+    CommentsListCreateView,
+    CommentsRetrieveUpdateDeleteView,
     GoalsListCreateView,
     GoalsRetrieveUpdateDelete,
     LikesCreateDeleteView,
@@ -8,8 +10,6 @@ from goals.views import (
     PublicGoalsDetails,
     TasksListCreateView,
     TasksRetrieveUpdateDelete,
-    CommentsListCreateView,
-    CommentsRetrieveUpdateDeleteView
 )
 
 app_name = 'goals'

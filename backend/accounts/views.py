@@ -4,10 +4,12 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import CustomUser
+from .filters import NotificationsFilter
+from .models import CustomUser, Notifications
 from .serializers import (
     ChangePasswordSerializer,
     CustomUserSerializer,
+    NotificationsSerializer,
     RegisterUserSerializer,
 )
 
@@ -40,3 +42,16 @@ class CustomChangePasswordView(APIView):
             
             return Response({'detail': 'Senha antiga incorreta.'}, status=status.HTTP_403_FORBIDDEN)
         return Response({"detail":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+class NotificationsListView(generics.ListAPIView):
+    serializer_class = NotificationsSerializer
+    filterset_class = NotificationsFilter
+    
+    def get_queryset(self):
+        return Notifications.objects.filter(user=self.request.user.pk)
+
+class NotificationsUpdateView(generics.UpdateAPIView):
+    serializer_class = NotificationsSerializer
+    
+    def get_queryset(self):
+        return Notifications.objects.filter(user=self.request.user.pk)

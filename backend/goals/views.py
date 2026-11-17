@@ -3,6 +3,7 @@ from django.db.models import Count
 from rest_framework import generics
 from rest_framework.views import APIView, Response
 
+from accounts.services.register_notification import notify
 from goals.filters import CommentsFilter, GoalsFilter, TasksFilter
 from goals.models import Comments, Goals, Likes, Tasks
 from goals.serializers import (
@@ -67,9 +68,16 @@ class LikesCreateDeleteView(APIView):
             with transaction.atomic():
                 serializer = self.serializer_class(data=data)
                 if serializer.is_valid():
-                    serializer.save(user=request.user)
+                    instancia = serializer.save(user=request.user)
                     context = {"detail": 'Success.'}
                     status = 201
+                    
+                    if instancia.goal.user != request.user:
+                        notify(
+                            user_instance=instancia.goal.user,
+                            description=f'{request.user.username} liked your goal {instancia.goal.name}'
+                        )
+                    
                 else:
                     context = {"detail": "Erro processing like.", "errors": serializer.errors}
                     status = 400
@@ -104,8 +112,16 @@ class CommentsListCreateView(generics.ListCreateAPIView):
     
     def create(self, request, *args, **kwargs):
         goal_id = request.data.get("goal")
-        if not Goals.objects.filter(id=goal_id, public=True).exists():
+        query = Goals.objects.filter(id=goal_id, public=True)
+        if not query.exists():
             return Response({'detail': 'Public Goal not found'}, status=404)
+        
+        instancia = query.first()
+        if instancia.goal.user != request.user:
+            notify(
+                user_instance=instancia.user,
+                description=f'{request.user.username} commented your goal {instancia.name}'
+            )
         
         return super().create(request, *args, **kwargs)
     

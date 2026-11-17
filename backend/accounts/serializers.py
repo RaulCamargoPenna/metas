@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from accounts.models import CustomUser
+from accounts.models import CustomUser, Notifications
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -24,3 +24,9 @@ class RegisterUserSerializer(serializers.ModelSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
+    
+class NotificationsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notifications
+        fields = "__all__"
+        read_only_fields = ['created_at', 'user']

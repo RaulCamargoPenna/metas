@@ -68,11 +68,12 @@ class PublicGoalsSerializer(serializers.ModelSerializer):
     image = serializers.FileField(source='user.image', read_only=True)
     tasks = TasksSerializer(many=True)
     total_likes = serializers.IntegerField(source='likes.count')
+    already_liked = serializers.SerializerMethodField()
     
     class Meta:
         model = Goals
-        fields = [field.name for field in model._meta.fields] + ['image', 'progress', 'tasks', 'total_likes']
-        read_only_fields = ['user', 'progress', 'image', 'total_likes']
+        fields = [field.name for field in model._meta.fields] + ['image', 'progress', 'tasks', 'total_likes', 'already_liked']
+        read_only_fields = ['user', 'progress', 'image', 'total_likes', 'already_liked']
         
     def is_valid(self, *, raise_exception=False):
         if 'user' in self.initial_data:
@@ -86,6 +87,14 @@ class PublicGoalsSerializer(serializers.ModelSerializer):
         progress = Goalprogress(total=tasks['total'], completed=tasks['completed_tasks'])
 
         return progress.progress()
+    
+    def get_already_liked(self, instance):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            liked = instance.likes.filter(user=request.user)
+            return liked.exists()
+        
+        return False
     
 class LikesSerializer(serializers.ModelSerializer):
     user = serializers.CharField(source='user.username', read_only=True)
