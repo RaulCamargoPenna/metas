@@ -2,12 +2,10 @@ import logging
 
 from django.db.models import Count, Q
 from django.utils import timezone
-from rest_framework import serializers
-from rest_framework import exceptions
+from rest_framework import exceptions, serializers
 
-from .models import Goals, Tasks
+from .models import Comments, Goals, Likes, Tasks
 from .services.progress import Goalprogress
-
 
 logger = logging.getLogger(__name__)
 
@@ -69,11 +67,12 @@ class PublicGoalsSerializer(serializers.ModelSerializer):
     progress = serializers.SerializerMethodField(read_only=True)
     image = serializers.FileField(source='user.image', read_only=True)
     tasks = TasksSerializer(many=True)
+    total_likes = serializers.IntegerField(source='likes.count')
     
     class Meta:
         model = Goals
-        fields = [field.name for field in model._meta.fields] + ['image', 'progress', 'tasks']
-        read_only_fields = ['user', 'progress', 'image']
+        fields = [field.name for field in model._meta.fields] + ['image', 'progress', 'tasks', 'total_likes']
+        read_only_fields = ['user', 'progress', 'image', 'total_likes']
         
     def is_valid(self, *, raise_exception=False):
         if 'user' in self.initial_data:
@@ -87,3 +86,15 @@ class PublicGoalsSerializer(serializers.ModelSerializer):
         progress = Goalprogress(total=tasks['total'], completed=tasks['completed_tasks'])
 
         return progress.progress()
+    
+class LikesSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(source='user.username', read_only=True)
+    class Meta:
+        model = Likes
+        fields = '__all__'
+
+class CommentsSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(source='user.username', read_only=True)
+    class Meta:
+        model = Comments
+        fields = '__all__'

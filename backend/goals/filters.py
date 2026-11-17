@@ -1,6 +1,6 @@
 import django_filters
 
-from .models import Goals, Tasks
+from .models import Comments, Goals, Tasks
 
 
 class GoalsFilter(django_filters.FilterSet):
@@ -14,5 +14,10 @@ class TasksFilter(django_filters.FilterSet):
     class Meta:
         fields = '__all__'
         model = Tasks
+        
+class CommentsFilter(django_filters.FilterSet):
+    class Meta:
+        fields = '__all__'
+        model = Comments
         
 

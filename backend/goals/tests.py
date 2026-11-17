@@ -6,8 +6,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import CustomUser
-from goals.models import Goals, Tasks
-from goals.serializers import GoalsSerializer
+from goals.models import Goals, Tasks, Likes
+from goals.serializers import GoalsSerializer, PublicGoalsSerializer
 
 
 class UserGoalsTestCase(TestCase):
@@ -63,6 +63,23 @@ class GoalsEndpointTest(APITestCase):
         cls.user_2.save()
         cls.goal_2 = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user_2, public=True)
         cls.task_goal_2 = Tasks.objects.create(name='Tarefa', goal=cls.goal_2, description='teste')
+    
+    def test_create_goal(self):
+        auth_url = reverse("accounts:token_obtain_pair")
+        login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
+        
+        url = reverse('goals:goals')
+        data = {'name': 'testex', 'description': 'testex'}
+        
+        post_response = self.client.post(
+            url,
+            data=data,
+            headers={
+                "Authorization": f"Bearer {login.json().get('access')}"
+            },
+            format='json'
+        )
+        self.assertEqual(post_response.status_code, status.HTTP_201_CREATED) 
     
     def test_whithout_auth(self):
         url = reverse('goals:goals')
@@ -211,10 +228,11 @@ class GoalsEndpointTest(APITestCase):
                 "Authorization": f"Bearer {login.json().get("access")}"
             }
         )
-        
+  
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for item in response.json().get("results"):
             self.assertEqual(item.get("public"), True)
+            self.assertEqual(item.get("total_likes"), 0)
         
 class GoalProgressTest(TestCase):
     @classmethod
@@ -235,3 +253,116 @@ class GoalProgressTest(TestCase):
         goal_2 = serializer(self.goal_2).data
         
         self.assertEqual(goal_2['progress'], 0.0)
+        
+class LikesCommentsEndpointTest(TestCase):
+    
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = CustomUser.objects.create(username='Test', password='1234')
+        cls.user.set_password('1234')
+        cls.user.save()
+        cls.goal = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user, public=True)
+        cls.private_goal = Goals.objects.create(name='Meta teste 2', description='Meta teste 2', user=cls.user, public=False)
+        
+        cls.user_2 = CustomUser.objects.create(username='Test-2', password='1234')
+        cls.user_2.set_password('1234')
+        cls.user_2.save()
+    
+    def test_like_goal(self):
+        auth_url = reverse("accounts:token_obtain_pair")
+        login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
+
+        url = reverse('goals:like', kwargs={"pk": self.goal.pk})
+        response = self.client.post(
+            url, 
+            headers={
+                "Authorization": f"Bearer {login.json().get('access')}"
+            }
+        )
+
+        self.assertEqual(response.status_code, 201)
+        
+        serializer = PublicGoalsSerializer
+        goal_info = serializer(self.goal).data
+        
+        self.assertEqual(goal_info['total_likes'], 1)
+    
+    def test_like_goal_already_liked(self):
+        Likes.objects.create(user=self.user_2, goal=self.goal)
+        
+        auth_url = reverse("accounts:token_obtain_pair")
+        login = self.client.post(auth_url, {'username': 'Test-2', 'password': '1234'})
+
+        url = reverse('goals:like', kwargs={"pk": self.goal.pk})
+        response = self.client.post(
+            url, 
+            headers={
+                "Authorization": f"Bearer {login.json().get('access')}"
+            }
+        )
+        
+        self.assertEqual(response.status_code, 400)
+    
+    def test_comment_goal(self):
+        Likes.objects.create(user=self.user_2, goal=self.goal)
+        
+        auth_url = reverse("accounts:token_obtain_pair")
+        login = self.client.post(auth_url, {'username': 'Test-2', 'password': '1234'})
+
+        url = reverse('goals:public_comment')
+        response = self.client.post(
+            url, 
+            headers={
+                "Authorization": f"Bearer {login.json().get('access')}"
+            },
+            data={
+                "goal": self.goal.pk,
+                "comment": 'Test comment'
+            }
+        )
+
+        self.assertEqual(response.status_code, 201)
+        
+    def test_comment_private_goal(self):
+        Likes.objects.create(user=self.user_2, goal=self.goal)
+        
+        auth_url = reverse("accounts:token_obtain_pair")
+        login = self.client.post(auth_url, {'username': 'Test-2', 'password': '1234'})
+
+        url = reverse('goals:public_comment')
+        response = self.client.post(
+            url, 
+            headers={
+                "Authorization": f"Bearer {login.json().get('access')}"
+            },
+            data={
+                "goal": self.private_goal.pk,
+                "comment": 'Test comment'
+            }
+        )
+        
+        self.assertEqual(response.status_code, 404)
+
+    def test_remove_like_goal(self):
+        auth_url = reverse("accounts:token_obtain_pair")
+        login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
+
+        url = reverse('goals:like', kwargs={"pk": self.goal.pk})
+        response = self.client.post(
+            url, 
+            headers={
+                "Authorization": f"Bearer {login.json().get('access')}"
+            }
+        )
+
+        self.assertEqual(response.status_code, 201)
+        
+        url = reverse('goals:like', kwargs={"pk": self.goal.pk})
+        response = self.client.delete(
+            url, 
+            headers={
+                "Authorization": f"Bearer {login.json().get('access')}"
+            }
+        )
+
+        self.assertEqual(response.status_code, 204)

@@ -1,8 +1,17 @@
+from django.db import IntegrityError, transaction
+from django.db.models import Count
 from rest_framework import generics
+from rest_framework.views import APIView, Response
 
-from goals.filters import GoalsFilter, TasksFilter
-from goals.models import Goals, Tasks
-from goals.serializers import GoalsSerializer, PublicGoalsSerializer, TasksSerializer
+from goals.filters import CommentsFilter, GoalsFilter, TasksFilter
+from goals.models import Comments, Goals, Likes, Tasks
+from goals.serializers import (
+    CommentsSerializer,
+    GoalsSerializer,
+    LikesSerializer,
+    PublicGoalsSerializer,
+    TasksSerializer,
+)
 
 
 class GoalsListCreateView(generics.ListCreateAPIView):
@@ -35,7 +44,7 @@ class TasksRetrieveUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
         return Tasks.objects.filter(goal__user=self.request.user)
 
 class PublicGoals(generics.ListAPIView):
-    serializer_class = GoalsSerializer
+    serializer_class = PublicGoalsSerializer
     filterset_class = GoalsFilter
     
     def get_queryset(self):
@@ -46,3 +55,63 @@ class PublicGoalsDetails(generics.RetrieveAPIView):
     
     def get_queryset(self):
         return Goals.objects.filter(public=True)
+    
+class LikesCreateDeleteView(APIView):
+    serializer_class = LikesSerializer
+    
+    def post(self, request, pk):
+        data = {
+            'goal': pk,
+        }
+        try:
+            with transaction.atomic():
+                serializer = self.serializer_class(data=data)
+                if serializer.is_valid():
+                    serializer.save(user=request.user)
+                    context = {"detail": 'Success.'}
+                    status = 201
+                else:
+                    context = {"detail": "Erro processing like.", "errors": serializer.errors}
+                    status = 400
+        except IntegrityError as e:
+            context = {"detail": str(e)}
+            status = 400
+            
+        return Response(context, status=status)
+        
+        
+    def delete(self, request, pk):
+        queryset = Likes.objects.filter(goal=pk, user=self.request.user)
+        if queryset.exists():
+            queryset.delete()
+            context = {}
+            status = 204
+        else:
+            context = {"detail": 'Not found'}
+            status = 404
+            
+        return Response(context, status=status)
+    
+class CommentsListCreateView(generics.ListCreateAPIView):
+    serializer_class = CommentsSerializer
+    filterset_class = CommentsFilter
+    
+    def get_queryset(self):
+        return Comments.objects.filter(goal__public=True)
+    
+    def perform_create(self, serializer):
+        return serializer.save(user=self.request.user)
+    
+    def create(self, request, *args, **kwargs):
+        goal_id = request.data.get("goal")
+        if not Goals.objects.filter(id=goal_id, public=True).exists():
+            return Response({'detail': 'Public Goal not found'}, status=404)
+        
+        return super().create(request, *args, **kwargs)
+    
+class CommentsRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CommentsSerializer
+    filterset_class = CommentsFilter
+    
+    def get_queryset(self):
+        return Comments.objects.filter(goal__public=True, user=self.request.user)
