@@ -1,24 +1,123 @@
-import { screen, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { json, mockFetch, renderAt, signedIn } from './helpers'
 
 const goal = { id: 'g1', name: 'Correr 10 km', description: 'Treinar com constância', public: false, progress: 0, created_at: '2026-11-12T12:00:00Z' }
+const listedGoal = { id: 'g1', name: 'Correr 10 km', description: 'Treinar com constância', owner: 'ana', image: null, progress: 0, total_tasks: 2, total_likes: 0, already_liked: false, created_at: '2026-11-12T12:00:00Z' }
 const firstTask = { id: 't1', goal: 'g1', name: 'Correr 3 km', description: 'Começar leve', completed: false, created_at: '2026-11-12T12:00:00Z' }
 
 describe('minhas metas', () => {
-  it('lista metas paginadas do usuário com visibilidade e progresso', async () => {
+  it('mostra só a primeira página e carrega a próxima quando solicitado', async () => {
     signedIn()
-    mockFetch({
-      'GET /api/v1/goals': json({ results: [goal], next: 'http://localhost/api/v1/goals?page=2' }),
-      'GET /api/v1/goals?page=2': json({ results: [{ ...goal, id: 'g2', name: 'Ler mais livros', public: true, progress: 50 }], next: null }),
+    const browser = userEvent.setup()
+    const fetchMock = mockFetch({
+      'GET /api/v1/goals': json({ count: 2, results: [listedGoal], next: 'http://localhost/api/v1/goals?page=2' }),
+      'GET /api/v1/goals?page=2': json({ count: 2, results: [{ ...listedGoal, id: 'g2', name: 'Ler mais livros', progress: 50, total_tasks: 1 }], next: null }),
     })
     renderAt('/metas')
     expect(await screen.findByRole('heading', { name: 'Correr 10 km' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Ler mais livros' })).toBeInTheDocument()
-    expect(screen.getByText('50%')).toBeInTheDocument()
-    expect(screen.getByText('✦ Pública')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Ler mais livros' })).not.toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(screen.getByText('2 tarefas')).toBeInTheDocument()
+    expect(screen.queryByText('◌ Privada')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Correr 10 km/ })).toHaveAttribute('href', '/metas/g1')
+    await browser.click(screen.getByRole('button', { name: 'Carregar mais metas' }))
+    expect(await screen.findByRole('heading', { name: 'Ler mais livros' })).toBeInTheDocument()
+    expect(screen.getByText('50%')).toBeInTheDocument()
+    expect(screen.getByText('1 tarefa')).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(screen.queryByRole('button', { name: 'Carregar mais metas' })).not.toBeInTheDocument()
+  })
+
+  it('mostra a visibilidade quando public vier na listagem', async () => {
+    signedIn()
+    mockFetch({
+      'GET /api/v1/goals': json({ count: 2, results: [
+        { ...listedGoal, public: false },
+        { ...listedGoal, id: 'g2', name: 'Ler mais livros', public: true },
+      ], next: null }),
+    })
+    renderAt('/metas')
+    await screen.findByRole('heading', { name: 'Correr 10 km' })
+    expect(screen.getByText('◌ Privada')).toBeInTheDocument()
+    expect(screen.getByText('✦ Pública')).toBeInTheDocument()
+  })
+
+  it('busca no servidor entre todas as metas e preserva o filtro nas páginas seguintes', async () => {
+    signedIn()
+    const browser = userEvent.setup()
+    const otherGoal = { ...listedGoal, id: 'g2', name: 'Ler 20 livros', description: 'Leitura diária' }
+    const fetchMock = mockFetch({
+      'GET /api/v1/goals': json({ count: 2, results: [listedGoal], next: 'http://localhost/api/v1/goals?page=2' }),
+      'GET /api/v1/goals?user=&description=&name=livr': json({ count: 2, results: [otherGoal], next: 'http://localhost/api/v1/goals?user=&description=&name=livr&page=2' }),
+      'GET /api/v1/goals?user=&description=&name=livr&page=2': json({ count: 2, results: [{ ...otherGoal, id: 'g3', name: 'Ler mais livros' }], next: null }),
+      'GET /api/v1/goals?user=ana&description=const&name=': json({ count: 1, results: [listedGoal], next: null }),
+    })
+    renderAt('/metas')
+    await screen.findByRole('heading', { name: 'Correr 10 km' })
+    await browser.type(screen.getByRole('searchbox', { name: 'Nome da meta' }), 'livr')
+    expect(await screen.findByRole('heading', { name: 'Ler 20 livros' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Correr 10 km' })).not.toBeInTheDocument()
+    await browser.click(screen.getByRole('button', { name: 'Carregar mais metas' }))
+    expect(await screen.findByRole('heading', { name: 'Ler mais livros' })).toBeInTheDocument()
+    act(() => {
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Usuário' }), { target: { value: 'ana' } })
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Descrição' }), { target: { value: 'const' } })
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Nome da meta' }), { target: { value: '' } })
+    })
+    expect(await screen.findByRole('heading', { name: 'Correr 10 km' })).toBeInTheDocument()
+    expect(screen.getByText('1')).toBeInTheDocument()
+    expect(fetchMock.mock.calls.map(([input]) => new URL(input, window.location.origin).search)).toContain('?user=&description=&name=livr&page=2')
+    expect(fetchMock.mock.calls.map(([input]) => new URL(input, window.location.origin).search)).toContain('?user=ana&description=const&name=')
+    act(() => {
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Usuário' }), { target: { value: '' } })
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Descrição' }), { target: { value: '' } })
+    })
+    await waitFor(() => expect(fetchMock.mock.calls.map(([input]) => new URL(input, window.location.origin).search).filter((search) => search === '')).toHaveLength(2))
+  })
+
+  it('carrega mais metas ao rolar até o fim da lista', async () => {
+    signedIn()
+    let onIntersection
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback) { onIntersection = callback }
+      observe() {}
+      disconnect() {}
+    })
+    const fetchMock = mockFetch({
+      'GET /api/v1/goals': json({ count: 2, results: [listedGoal], next: 'http://localhost/api/v1/goals?page=2' }),
+      'GET /api/v1/goals?page=2': json({ count: 2, results: [{ ...listedGoal, id: 'g2', name: 'Ler mais livros' }], next: null }),
+    })
+    renderAt('/metas')
+    await screen.findByRole('heading', { name: 'Correr 10 km' })
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(onIntersection).toBeUndefined()
+    fireEvent.scroll(window)
+    expect(onIntersection).toBeTypeOf('function')
+    await act(async () => { onIntersection([{ isIntersecting: true }]) })
+    expect(await screen.findByRole('heading', { name: 'Ler mais livros' })).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('preserva a primeira página e permite repetir uma página que falhou', async () => {
+    signedIn()
+    const browser = userEvent.setup()
+    let attempts = 0
+    mockFetch({
+      'GET /api/v1/goals': json({ count: 2, results: [listedGoal], next: 'http://localhost/api/v1/goals?page=2' }),
+      'GET /api/v1/goals?page=2': () => ++attempts === 1
+        ? json({ detail: 'Falha temporária.' }, 503)
+        : json({ count: 2, results: [{ ...listedGoal, id: 'g2', name: 'Ler mais livros' }], next: null }),
+    })
+    renderAt('/metas')
+    await screen.findByRole('heading', { name: 'Correr 10 km' })
+    await browser.click(screen.getByRole('button', { name: 'Carregar mais metas' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Falha temporária.')
+    expect(screen.getByRole('heading', { name: 'Correr 10 km' })).toBeInTheDocument()
+    await browser.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+    expect(await screen.findByRole('heading', { name: 'Ler mais livros' })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('oferece criar a primeira meta quando a lista está vazia', async () => {

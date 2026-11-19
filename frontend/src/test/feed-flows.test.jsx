@@ -1,9 +1,9 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { act, fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { json, mockFetch, renderAt, signedIn } from './helpers'
 
-const goal = { id: 'public-1', name: 'Correr 10 km', description: 'Treinar com a comunidade', user: 'ana', image: '/media/ana.jpg', public: true, progress: 72, total_likes: 3, already_liked: false, created_at: '2026-11-13T12:00:00Z' }
+const goal = { id: 'public-1', name: 'Correr 10 km', description: 'Treinar com a comunidade', owner: 'ana', image: '/media/ana.jpg', public: true, progress: 72, total_tasks: 2, total_likes: 3, already_liked: false, created_at: '2026-11-13T12:00:00Z' }
 
 describe('feed de metas públicas', () => {
   it('exige login antes de consultar o feed', async () => {
@@ -13,33 +13,117 @@ describe('feed de metas públicas', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('lista páginas do feed e mostra foto, autor e progresso', async () => {
+  it('carrega a primeira página e busca a próxima somente ao chegar ao fim', async () => {
     signedIn()
-    mockFetch({
+    const browser = userEvent.setup()
+    const fetchMock = mockFetch({
       'GET /api/v1/feed': json({ results: [goal], next: 'http://localhost/api/v1/feed?page=2' }),
-      'GET /api/v1/feed?page=2': json({ results: [{ ...goal, id: 'public-2', name: 'Ler 20 livros', user: 'bruno', image: null, progress: 35 }], next: null }),
+      'GET /api/v1/feed?page=2': json({ results: [goal, { ...goal, id: 'public-2', name: 'Ler 20 livros', owner: 'bruno', image: null, progress: 35, total_tasks: 1 }], next: null }),
     })
     renderAt('/feed')
     expect(await screen.findByRole('heading', { name: 'Correr 10 km' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Ler 20 livros' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Ler 20 livros' })).not.toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledOnce()
     expect(screen.getByRole('img', { name: 'Foto de ana' })).toHaveAttribute('src', `${window.location.origin}/media/ana.jpg`)
-    expect(screen.getByLabelText('Avatar de bruno')).toHaveTextContent('BR')
     expect(screen.getByText('72%')).toBeInTheDocument()
+    expect(screen.getByText('2 tarefas')).toBeInTheDocument()
+    await browser.click(screen.getByRole('button', { name: 'Carregar mais metas' }))
+    expect(await screen.findByRole('heading', { name: 'Ler 20 livros' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Avatar de bruno')).toHaveTextContent('BR')
+    expect(screen.getByText('1 tarefa')).toBeInTheDocument()
     expect(screen.getAllByLabelText('3 curtidas')).toHaveLength(2)
     expect(screen.getAllByRole('link', { name: 'Ver meta' })[0]).toHaveAttribute('href', '/feed/public-1')
     expect(screen.getAllByRole('link', { name: 'Comentar' })[0]).toHaveAttribute('href', '/feed/public-1#comments')
+    expect(screen.getAllByRole('link', { name: 'Ver meta' })).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: 'Carregar mais metas' })).not.toBeInTheDocument()
   })
 
-  it('filtra metas por nome ou autor sem nova requisição', async () => {
+  it('carrega a próxima página automaticamente quando o fim da lista aparece', async () => {
+    signedIn()
+    let onIntersection
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback) { onIntersection = callback }
+      observe() {}
+      disconnect() {}
+    })
+    const fetchMock = mockFetch({
+      'GET /api/v1/feed': json({ results: [goal], next: 'http://localhost/api/v1/feed?page=2' }),
+      'GET /api/v1/feed?page=2': json({ results: [{ ...goal, id: 'public-2', name: 'Ler 20 livros' }], next: null }),
+    })
+    renderAt('/feed')
+    expect(await screen.findByRole('heading', { name: 'Correr 10 km' })).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(onIntersection).toBeUndefined()
+    fireEvent.scroll(window)
+    expect(onIntersection).toBeTypeOf('function')
+    await act(async () => { onIntersection([{ isIntersecting: true }]) })
+    expect(await screen.findByRole('heading', { name: 'Ler 20 livros' })).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(screen.getAllByRole('link', { name: 'Ver meta' })).toHaveLength(2)
+  })
+
+  it('mantém as metas carregadas e permite tentar de novo se a próxima página falhar', async () => {
     signedIn()
     const browser = userEvent.setup()
-    const fetchMock = mockFetch({ 'GET /api/v1/feed': json({ results: [goal, { ...goal, id: 'public-2', name: 'Aprender violão', user: 'bruno' }], next: null }) })
+    let attempts = 0
+    mockFetch({
+      'GET /api/v1/feed': json({ results: [goal], next: 'http://localhost/api/v1/feed?page=2' }),
+      'GET /api/v1/feed?page=2': () => ++attempts === 1
+        ? json({ detail: 'Falha temporária.' }, 503)
+        : json({ results: [{ ...goal, id: 'public-2', name: 'Ler 20 livros' }], next: null }),
+    })
     renderAt('/feed')
-    await screen.findByRole('heading', { name: 'Aprender violão' })
-    await browser.type(screen.getByRole('searchbox', { name: 'Buscar metas públicas' }), 'ana')
+    await screen.findByRole('heading', { name: 'Correr 10 km' })
+    await browser.click(screen.getByRole('button', { name: 'Carregar mais metas' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Falha temporária.')
     expect(screen.getByRole('heading', { name: 'Correr 10 km' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Aprender violão' })).not.toBeInTheDocument()
-    expect(fetchMock).toHaveBeenCalledOnce()
+    await browser.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+    expect(await screen.findByRole('heading', { name: 'Ler 20 livros' })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('busca no servidor metas que ainda não foram carregadas e mantém o filtro na paginação', async () => {
+    signedIn()
+    const browser = userEvent.setup()
+    const otherGoal = { ...goal, id: 'public-2', name: 'Ler 20 livros', owner: 'bruno' }
+    const fetchMock = mockFetch({
+      'GET /api/v1/feed': json({ results: [goal], next: 'http://localhost/api/v1/feed?page=2' }),
+      'GET /api/v1/feed?user=&description=&name=livr': json({ results: [otherGoal], next: 'http://localhost/api/v1/feed?user=&description=&name=livr&page=2' }),
+      'GET /api/v1/feed?user=&description=&name=livr&page=2': json({ results: [{ ...otherGoal, id: 'public-3', name: 'Ler mais livros' }], next: null }),
+      'GET /api/v1/feed?user=ana&description=treinar&name=livr': json({ results: [{ ...otherGoal, owner: 'ana', description: 'Treinar leitura' }], next: null }),
+    })
+    renderAt('/feed')
+    await screen.findByRole('heading', { name: 'Correr 10 km' })
+    await browser.type(screen.getByRole('searchbox', { name: 'Nome da meta' }), 'livr')
+    expect(await screen.findByRole('heading', { name: 'Ler 20 livros' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Correr 10 km' })).not.toBeInTheDocument()
+    await browser.click(screen.getByRole('button', { name: 'Carregar mais metas' }))
+    expect(await screen.findByRole('heading', { name: 'Ler mais livros' })).toBeInTheDocument()
+    act(() => {
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Usuário' }), { target: { value: 'ana' } })
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Descrição' }), { target: { value: 'treinar' } })
+    })
+    expect(await screen.findByText('Treinar leitura')).toBeInTheDocument()
+    expect(fetchMock.mock.calls.map(([input]) => new URL(input, window.location.origin).search)).toContain('?user=&description=&name=livr&page=2')
+    expect(fetchMock.mock.calls.map(([input]) => new URL(input, window.location.origin).search)).toContain('?user=ana&description=treinar&name=livr')
+  })
+
+  it('ignora uma página antiga que termina de carregar depois de uma nova busca', async () => {
+    signedIn()
+    const browser = userEvent.setup()
+    let finishOldPage
+    mockFetch({
+      'GET /api/v1/feed': json({ results: [goal], next: 'http://localhost/api/v1/feed?page=2' }),
+      'GET /api/v1/feed?page=2': () => new Promise((resolve) => { finishOldPage = resolve }),
+      'GET /api/v1/feed?user=&description=&name=livr': json({ results: [{ ...goal, id: 'public-2', name: 'Ler 20 livros' }], next: null }),
+    })
+    renderAt('/feed')
+    await screen.findByRole('heading', { name: 'Correr 10 km' })
+    await browser.click(screen.getByRole('button', { name: 'Carregar mais metas' }))
+    await browser.type(screen.getByRole('searchbox', { name: 'Nome da meta' }), 'livr')
+    expect(await screen.findByRole('heading', { name: 'Ler 20 livros' })).toBeInTheDocument()
+    await act(async () => { finishOldPage(json({ results: [{ ...goal, id: 'public-3', name: 'Meta antiga' }], next: null })) })
+    expect(screen.queryByRole('heading', { name: 'Meta antiga' })).not.toBeInTheDocument()
   })
 
   it('curte e remove uma curtida no card, atualizando a contagem', async () => {
@@ -138,9 +222,28 @@ describe('feed de metas públicas', () => {
     renderAt('/feed')
     expect(await screen.findByRole('alert')).toHaveTextContent('Falha no feed.')
   })
+
+  it('avisa quando a resposta do feed não inclui os dados necessários da meta', async () => {
+    signedIn()
+    mockFetch({ 'GET /api/v1/feed': json({ results: [{ owner: 'ana', total_tasks: 2 }], next: null }) })
+    renderAt('/feed')
+    expect(await screen.findByRole('alert')).toHaveTextContent('A resposta do feed está sem o identificador ou o nome das metas.')
+  })
 })
 
 describe('detalhe de meta pública', () => {
+  it('mostra o total de tarefas quando o detalhe retorna total_tasks', async () => {
+    signedIn()
+    mockFetch({
+      'GET /api/v1/public/goal/public-1': json(goal),
+      'GET /api/v1/public/comment?goal=public-1': json({ results: [], next: null }),
+    })
+    renderAt('/feed/public-1')
+    expect(await screen.findByRole('heading', { name: 'Correr 10 km' })).toBeInTheDocument()
+    expect(screen.getByText('2 tarefas nesta meta')).toBeInTheDocument()
+    expect(screen.getByText('Esta meta tem 2 tarefas.')).toBeInTheDocument()
+  })
+
   it('usa already_liked no detalhe para oferecer a remoção da curtida', async () => {
     signedIn()
     mockFetch({
@@ -190,6 +293,7 @@ describe('detalhe de meta pública', () => {
     signedIn()
     mockFetch({ 'GET /api/v1/public/goal/public-1': json({
       ...goal,
+      total_tasks: 2,
       tasks: [
         { id: 't1', name: 'Primeiro treino', description: 'Correr 3 km', completed: true },
         { id: 't2', name: 'Segundo treino', description: 'Correr 5 km', completed: false },

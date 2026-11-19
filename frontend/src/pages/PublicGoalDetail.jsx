@@ -30,6 +30,7 @@ export function PublicGoalDetail() {
         const response = await apiRequest(`/public/goal/${goalId}`)
         if (!response.ok) throw new Error(response.status === 404 ? 'Essa meta pública não foi encontrada.' : await readApiError(response, 'Não foi possível carregar esta meta.'))
         const data = await response.json()
+        if (!data.name) throw new Error('A resposta da meta pública está sem o nome da meta.')
         if (active) setGoal(data)
       } catch (caughtError) {
         if (!active) return
@@ -60,8 +61,10 @@ export function PublicGoalDetail() {
   if (!hasSession()) return <Navigate to="/login" replace />
 
   const progress = Math.max(0, Math.min(100, Number(goal?.progress) || 0))
-  const tasks = goal?.tasks ?? []
+  const tasks = Array.isArray(goal?.tasks) ? goal.tasks : []
+  const taskCount = Math.max(0, Number(goal?.total_tasks ?? (Array.isArray(goal?.tasks) ? tasks.length : goal?.tasks)) || 0)
   const completedCount = tasks.filter((task) => task.completed).length
+  const owner = goal?.owner ?? goal?.user
 
   async function submitComment(event) {
     event.preventDefault()
@@ -100,14 +103,14 @@ export function PublicGoalDetail() {
                 <p className="relative mt-5 max-w-2xl whitespace-pre-wrap text-sm leading-7 text-slate-600">{goal.description}</p>
               </div>
               <div className="p-7 sm:p-10">
-                <div className="flex items-center gap-4"><UserAvatar username={goal.user} image={goal.image} className="h-16 w-16 text-lg" /><div><span className={kicker}>CRIADA POR</span><p className="mt-1 text-base font-extrabold text-emerald-950">{goal.user}</p><time dateTime={goal.created_at} className="mt-0.5 block text-xs text-slate-500">{dateFormatter.format(new Date(goal.created_at))}</time></div></div>
-                <div className="mt-10 rounded-2xl border border-white/80 bg-white/45 p-5 backdrop-blur-xl sm:p-6"><div className="flex items-center justify-between text-sm"><span className="font-bold text-emerald-950">Progresso da meta</span><strong className="text-emerald-700">{Math.round(progress)}%</strong></div><div className="mt-3 h-3 overflow-hidden rounded-full bg-emerald-100/80"><span className="block h-full rounded-full bg-gradient-to-r from-emerald-300 to-emerald-600" style={{ width: `${progress}%` }} /></div><p className="mt-3 text-xs text-slate-500">{completedCount} de {tasks.length} {tasks.length === 1 ? 'tarefa concluída' : 'tarefas concluídas'}</p></div>
+                <div className="flex items-center gap-4"><UserAvatar username={owner} image={goal.image} className="h-16 w-16 text-lg" /><div><span className={kicker}>CRIADA POR</span><p className="mt-1 text-base font-extrabold text-emerald-950">{owner}</p>{goal.created_at && <time dateTime={goal.created_at} className="mt-0.5 block text-xs text-slate-500">{dateFormatter.format(new Date(goal.created_at))}</time>}</div></div>
+                <div className="mt-10 rounded-2xl border border-white/80 bg-white/45 p-5 backdrop-blur-xl sm:p-6"><div className="flex items-center justify-between text-sm"><span className="font-bold text-emerald-950">Progresso da meta</span><strong className="text-emerald-700">{Math.round(progress)}%</strong></div><div className="mt-3 h-3 overflow-hidden rounded-full bg-emerald-100/80"><span className="block h-full rounded-full bg-gradient-to-r from-emerald-300 to-emerald-600" style={{ width: `${progress}%` }} /></div><p className="mt-3 text-xs text-slate-500">{Array.isArray(goal.tasks) ? `${completedCount} de ${taskCount} ${taskCount === 1 ? 'tarefa concluída' : 'tarefas concluídas'}` : `${taskCount} ${taskCount === 1 ? 'tarefa nesta meta' : 'tarefas nesta meta'}`}</p></div>
               </div>
             </article>
-            <section className={`${glass} p-6 sm:p-8`} aria-label="Curtidas da meta"><GoalLikeButton goalId={goal.id} totalLikes={goal.total_likes} alreadyLiked={goal.already_liked} /></section>
+            <section className={`${glass} p-6 sm:p-8`} aria-label="Curtidas da meta"><GoalLikeButton goalId={goalId} totalLikes={goal.total_likes} alreadyLiked={goal.already_liked} /></section>
             <section className={`${glass} p-7 sm:p-10`} aria-labelledby="public-tasks-title">
-              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/80 pb-5"><div><span className={kicker}>PASSO A PASSO</span><h2 id="public-tasks-title" className="mt-2 text-xl font-extrabold text-emerald-950">Tarefas da meta</h2></div><span className="text-xs text-slate-500">{tasks.length} {tasks.length === 1 ? 'tarefa' : 'tarefas'}</span></div>
-              {tasks.length === 0 ? <p className="py-10 text-center text-sm text-slate-500">Esta meta ainda não tem tarefas.</p> : <div className="mt-5 space-y-3">{tasks.map((task) => <article key={task.id} className="flex items-start gap-3 rounded-2xl border border-white/80 bg-white/45 p-4 backdrop-blur-lg"><span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-sm font-extrabold ${task.completed ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-emerald-200 bg-white/75 text-transparent'}`} aria-label={task.completed ? 'Concluída' : 'Pendente'}>{task.completed ? '✓' : '○'}</span><div className="min-w-0 flex-1"><h3 className={`text-sm font-extrabold ${task.completed ? 'text-slate-400 line-through' : 'text-emerald-950'}`}>{task.name}</h3>{task.description && <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-500">{task.description}</p>}</div><span className={`hidden text-[10px] font-bold sm:inline ${task.completed ? 'text-emerald-700' : 'text-slate-400'}`}>{task.completed ? 'Concluída' : 'Pendente'}</span></article>)}</div>}
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/80 pb-5"><div><span className={kicker}>PASSO A PASSO</span><h2 id="public-tasks-title" className="mt-2 text-xl font-extrabold text-emerald-950">Tarefas da meta</h2></div><span className="text-xs text-slate-500">{taskCount} {taskCount === 1 ? 'tarefa' : 'tarefas'}</span></div>
+              {taskCount === 0 ? <p className="py-10 text-center text-sm text-slate-500">Esta meta ainda não tem tarefas.</p> : tasks.length === 0 ? <p className="py-10 text-center text-sm text-slate-500">Esta meta tem {taskCount} {taskCount === 1 ? 'tarefa' : 'tarefas'}.</p> : <div className="mt-5 space-y-3">{tasks.map((task) => <article key={task.id} className="flex items-start gap-3 rounded-2xl border border-white/80 bg-white/45 p-4 backdrop-blur-lg"><span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-sm font-extrabold ${task.completed ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-emerald-200 bg-white/75 text-transparent'}`} aria-label={task.completed ? 'Concluída' : 'Pendente'}>{task.completed ? '✓' : '○'}</span><div className="min-w-0 flex-1"><h3 className={`text-sm font-extrabold ${task.completed ? 'text-slate-400 line-through' : 'text-emerald-950'}`}>{task.name}</h3>{task.description && <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-500">{task.description}</p>}</div><span className={`hidden text-[10px] font-bold sm:inline ${task.completed ? 'text-emerald-700' : 'text-slate-400'}`}>{task.completed ? 'Concluída' : 'Pendente'}</span></article>)}</div>}
             </section>
             <section id="comments" className={`${glass} scroll-mt-8 p-7 sm:p-10`} aria-labelledby="comments-title">
               <span className={kicker}>CONVERSA</span>

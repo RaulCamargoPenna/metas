@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { json, mockFetch, renderAt, signedIn } from './helpers'
 
 const profile = { username: 'ana', first_name: 'Ana', last_name: 'Silva', email: 'ana@example.com', bio: 'Minha jornada', image: null }
@@ -43,6 +43,28 @@ describe('perfil', () => {
     await browser.upload(screen.getByLabelText('Escolher imagem'), new File(['imagem'], 'foto.png', { type: 'image/png' }))
     await browser.click(screen.getByRole('button', { name: 'Salvar alterações' }))
     expect(await screen.findByText('Informações atualizadas com sucesso.')).toBeInTheDocument()
+  })
+
+  it('mostra a imagem escolhida antes de salvar', async () => {
+    signedIn()
+    const browser = userEvent.setup()
+    const createObjectURL = URL.createObjectURL
+    const revokeObjectURL = URL.revokeObjectURL
+    URL.createObjectURL = vi.fn(() => 'blob:foto-preview')
+    URL.revokeObjectURL = vi.fn()
+    try {
+      mockFetch({ 'GET /api/v1/user': json(profile) })
+      const view = renderAt('/perfil')
+      await screen.findByDisplayValue('Ana')
+      await browser.upload(screen.getByLabelText('Escolher imagem'), new File(['imagem'], 'foto.png', { type: 'image/png' }))
+      expect(screen.getByText('Selecionada: foto.png')).toBeInTheDocument()
+      expect(screen.getByRole('img', { name: 'Sua foto de perfil' })).toHaveAttribute('src', 'blob:foto-preview')
+      view.unmount()
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:foto-preview')
+    } finally {
+      URL.createObjectURL = createObjectURL
+      URL.revokeObjectURL = revokeObjectURL
+    }
   })
 
   it('permite remover a foto com image null', async () => {
