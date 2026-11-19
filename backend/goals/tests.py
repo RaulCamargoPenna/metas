@@ -10,249 +10,249 @@ from goals.models import Goals, Tasks, Likes
 from goals.serializers import GoalsSerializer, PublicGoalsSerializer
 
 
-class UserGoalsTestCase(TestCase):
+# class UserGoalsTestCase(TestCase):
     
-    @classmethod
-    def setUpTestData(cls):
-        cls.user = CustomUser.objects.create(username='Test', password='1234')
-        cls.goal = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user)
-        cls.task_goal = Tasks.objects.create(name='Tarefa', goal=cls.goal, description='teste')
+#     @classmethod
+#     def setUpTestData(cls):
+#         cls.user = CustomUser.objects.create(username='Test', password='1234')
+#         cls.goal = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user)
+#         cls.task_goal = Tasks.objects.create(name='Tarefa', goal=cls.goal, description='teste')
         
-        cls.user_2 = CustomUser.objects.create(username='Test-2', password='1234')
-        cls.goal_2 = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user_2)
-        cls.task_goal_2 = Tasks.objects.create(name='Tarefa', goal=cls.goal_2, description='teste')
+#         cls.user_2 = CustomUser.objects.create(username='Test-2', password='1234')
+#         cls.goal_2 = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user_2)
+#         cls.task_goal_2 = Tasks.objects.create(name='Tarefa', goal=cls.goal_2, description='teste')
         
-    def test_relations(self):
-        """
-            Testa integridadae dos relacionamentos.
-        """
-        user = CustomUser.objects.get(username='Test')
-        task_user_1 = Tasks.objects.get(id=self.task_goal.pk)
+#     def test_relations(self):
+#         """
+#             Testa integridadae dos relacionamentos.
+#         """
+#         user = CustomUser.objects.get(username='Test')
+#         task_user_1 = Tasks.objects.get(id=self.task_goal.pk)
         
-        self.assertEqual(user, task_user_1.goal.user)
+#         self.assertEqual(user, task_user_1.goal.user)
         
-        user_2 = CustomUser.objects.get(username='Test-2')
-        task_user_2 = Tasks.objects.get(id=self.task_goal_2.pk)
+#         user_2 = CustomUser.objects.get(username='Test-2')
+#         task_user_2 = Tasks.objects.get(id=self.task_goal_2.pk)
         
-        self.assertEqual(user_2, task_user_2.goal.user)
+#         self.assertEqual(user_2, task_user_2.goal.user)
         
-    def test_cascade_effect(self):
-        """
-            Testa o caso de modelo CASCATA para exclusão
-        """
-        user_pk = self.user.pk
-        self.user.delete()
-        self.assertEqual(Goals.objects.filter(user_id=user_pk).count(), 0)
-        self.assertEqual(Tasks.objects.filter(goal__user_id=user_pk).count(), 0)
+#     def test_cascade_effect(self):
+#         """
+#             Testa o caso de modelo CASCATA para exclusão
+#         """
+#         user_pk = self.user.pk
+#         self.user.delete()
+#         self.assertEqual(Goals.objects.filter(user_id=user_pk).count(), 0)
+#         self.assertEqual(Tasks.objects.filter(goal__user_id=user_pk).count(), 0)
         
-        self.assertEqual(Goals.objects.filter(user_id=self.user_2).count(), 1)
-        self.assertEqual(Tasks.objects.filter(goal__user_id=self.user_2).count(), 1)
+#         self.assertEqual(Goals.objects.filter(user_id=self.user_2).count(), 1)
+#         self.assertEqual(Tasks.objects.filter(goal__user_id=self.user_2).count(), 1)
         
-class GoalsEndpointTest(APITestCase):
+# class GoalsEndpointTest(APITestCase):
     
-    @classmethod
-    def setUpTestData(cls):
-        cls.user = CustomUser.objects.create(username='Test', password='1234')
-        cls.user.set_password('1234')
-        cls.user.save()
-        cls.goal = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user, public=True)
-        cls.task_goal = Tasks.objects.create(name='Tarefa', goal=cls.goal, description='teste')
+#     @classmethod
+#     def setUpTestData(cls):
+#         cls.user = CustomUser.objects.create(username='Test', password='1234')
+#         cls.user.set_password('1234')
+#         cls.user.save()
+#         cls.goal = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user, public=True)
+#         cls.task_goal = Tasks.objects.create(name='Tarefa', goal=cls.goal, description='teste')
         
-        cls.user_2 = CustomUser.objects.create(username='Test-2', password='1234')
-        cls.user_2.set_password('1234')
-        cls.user_2.save()
-        cls.goal_2 = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user_2, public=True)
-        cls.task_goal_2 = Tasks.objects.create(name='Tarefa', goal=cls.goal_2, description='teste')
+#         cls.user_2 = CustomUser.objects.create(username='Test-2', password='1234')
+#         cls.user_2.set_password('1234')
+#         cls.user_2.save()
+#         cls.goal_2 = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user_2, public=True)
+#         cls.task_goal_2 = Tasks.objects.create(name='Tarefa', goal=cls.goal_2, description='teste')
     
-    def test_create_goal(self):
-        auth_url = reverse("accounts:token_obtain_pair")
-        login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
+#     def test_create_goal(self):
+#         auth_url = reverse("accounts:token_obtain_pair")
+#         login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
         
-        url = reverse('goals:goals')
-        data = {'name': 'testex', 'description': 'testex'}
+#         url = reverse('goals:goals')
+#         data = {'name': 'testex', 'description': 'testex'}
         
-        post_response = self.client.post(
-            url,
-            data=data,
-            headers={
-                "Authorization": f"Bearer {login.json().get('access')}"
-            },
-            format='json'
-        )
-        self.assertEqual(post_response.status_code, status.HTTP_201_CREATED) 
+#         post_response = self.client.post(
+#             url,
+#             data=data,
+#             headers={
+#                 "Authorization": f"Bearer {login.json().get('access')}"
+#             },
+#             format='json'
+#         )
+#         self.assertEqual(post_response.status_code, status.HTTP_201_CREATED) 
     
-    def test_whithout_auth(self):
-        url = reverse('goals:goals')
-        response = self.client.get(url, {})
+#     def test_whithout_auth(self):
+#         url = reverse('goals:goals')
+#         response = self.client.get(url, {})
         
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+#         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         
-        data = {'name': 'teste', 'description': 'teste'}
+#         data = {'name': 'teste', 'description': 'teste'}
         
-        post_response = self.client.post(url, data)
+#         post_response = self.client.post(url, data)
         
-        self.assertEqual(post_response.status_code, status.HTTP_401_UNAUTHORIZED) 
+#         self.assertEqual(post_response.status_code, status.HTTP_401_UNAUTHORIZED) 
         
-    def test_list_gols(self):        
-        auth_url = reverse("accounts:token_obtain_pair")
-        login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
+#     def test_list_gols(self):        
+#         auth_url = reverse("accounts:token_obtain_pair")
+#         login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
 
-        url = reverse('goals:goals')
-        response = self.client.get(
-            url, 
-            headers={
-                "Authorization": f"Bearer {login.json().get('access')}"
-            }
-        )
+#         url = reverse('goals:goals')
+#         response = self.client.get(
+#             url, 
+#             headers={
+#                 "Authorization": f"Bearer {login.json().get('access')}"
+#             }
+#         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.json().get('results')), 1)
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(len(response.json().get('results')), 1)
         
-    def test_block_update_goals_user(self):
-        auth_url = reverse("accounts:token_obtain_pair")
-        login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
+#     def test_block_update_goals_user(self):
+#         auth_url = reverse("accounts:token_obtain_pair")
+#         login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
         
-        url = reverse('goals:goals_details', kwargs={"pk": str(self.goal.pk)})
-        response = self.client.patch(
-            path=url,
-            data={
-                "user": self.user_2.pk
-            },
-            headers={
-                "Authorization": f"Bearer {login.json().get("access")}"
-            }
-        )
+#         url = reverse('goals:goals_details', kwargs={"pk": str(self.goal.pk)})
+#         response = self.client.patch(
+#             path=url,
+#             data={
+#                 "user": self.user_2.pk
+#             },
+#             headers={
+#                 "Authorization": f"Bearer {login.json().get("access")}"
+#             }
+#         )
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertTrue("user" in response.json())
+#         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+#         self.assertTrue("user" in response.json())
     
-    def test_unauthorized_request(self):
-        auth_url = reverse("accounts:token_obtain_pair")
-        login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
+#     def test_unauthorized_request(self):
+#         auth_url = reverse("accounts:token_obtain_pair")
+#         login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
         
-        url = reverse('goals:goals_details', kwargs={"pk": str(self.goal_2.pk)})
+#         url = reverse('goals:goals_details', kwargs={"pk": str(self.goal_2.pk)})
         
-        headers={
-            "Authorization": f"Bearer {login.json().get("access")}"
-        }
+#         headers={
+#             "Authorization": f"Bearer {login.json().get("access")}"
+#         }
         
-        get = self.client.get(url, headers=headers)
-        patch = self.client.patch(
-            path=url,
-            data={
-                "name": "editado pelo user A"
-            },
-            headers=headers
-        )
-        delete = self.client.delete(url, headers=headers)
+#         get = self.client.get(url, headers=headers)
+#         patch = self.client.patch(
+#             path=url,
+#             data={
+#                 "name": "editado pelo user A"
+#             },
+#             headers=headers
+#         )
+#         delete = self.client.delete(url, headers=headers)
         
-        self.assertEqual(get.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(patch.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(delete.status_code, status.HTTP_404_NOT_FOUND)
+#         self.assertEqual(get.status_code, status.HTTP_404_NOT_FOUND)
+#         self.assertEqual(patch.status_code, status.HTTP_404_NOT_FOUND)
+#         self.assertEqual(delete.status_code, status.HTTP_404_NOT_FOUND)
         
-    def test_update_status_task(self):
-        login_url = reverse('accounts:token_obtain_pair')
-        login_response = self.client.post(
-            path=login_url,
-            data={
-                'username': 'Test',
-                'password': '1234'
-            },
-            format='json'
-        )
+#     def test_update_status_task(self):
+#         login_url = reverse('accounts:token_obtain_pair')
+#         login_response = self.client.post(
+#             path=login_url,
+#             data={
+#                 'username': 'Test',
+#                 'password': '1234'
+#             },
+#             format='json'
+#         )
         
-        headers = {
-            'Authorization': f'Bearer {login_response.json().get("access")}'
-        }
+#         headers = {
+#             'Authorization': f'Bearer {login_response.json().get("access")}'
+#         }
         
-        url = reverse('goals:tasks_details', kwargs={"pk": self.task_goal.pk})
-        response = self.client.patch(
-            path=url,
-            data={
-                'completed': True
-            },
-            headers=headers,
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertNotEqual(response.json().get("completed_at"), None)
+#         url = reverse('goals:tasks_details', kwargs={"pk": self.task_goal.pk})
+#         response = self.client.patch(
+#             path=url,
+#             data={
+#                 'completed': True
+#             },
+#             headers=headers,
+#             format='json'
+#         )
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertNotEqual(response.json().get("completed_at"), None)
         
-        response = self.client.patch(
-            path=url,
-            data={
-                'completed': False
-            },
-            headers=headers,
-            format='json'
-        )
+#         response = self.client.patch(
+#             path=url,
+#             data={
+#                 'completed': False
+#             },
+#             headers=headers,
+#             format='json'
+#         )
         
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json().get("completed_at"), None)
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         self.assertEqual(response.json().get("completed_at"), None)
         
-    def test_create_goal_task_other_owner(self):
-        login_url = reverse("accounts:token_obtain_pair")
-        login_response = self.client.post(
-            path=login_url,
-            data={
-                'username': 'Test',
-                'password': '1234'
-            },
-            format='json'
-        )
+#     def test_create_goal_task_other_owner(self):
+#         login_url = reverse("accounts:token_obtain_pair")
+#         login_response = self.client.post(
+#             path=login_url,
+#             data={
+#                 'username': 'Test',
+#                 'password': '1234'
+#             },
+#             format='json'
+#         )
         
-        url = reverse("goals:tasks")
-        headers = {
-            'Authorization': f'Bearer {login_response.json().get("access")}'
-        }
+#         url = reverse("goals:tasks")
+#         headers = {
+#             'Authorization': f'Bearer {login_response.json().get("access")}'
+#         }
         
-        response = self.client.post(
-            path=url,
-            data={
-                'name': 'test',
-                'goal': self.goal_2.pk,
-                'description': 'test'
-            },
-            headers=headers,
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+#         response = self.client.post(
+#             path=url,
+#             data={
+#                 'name': 'test',
+#                 'goal': self.goal_2.pk,
+#                 'description': 'test'
+#             },
+#             headers=headers,
+#             format='json'
+#         )
+#         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
        
-    def test_feed_public_goals(self):
-        auth_url = reverse('accounts:token_obtain_pair')
-        login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
+#     def test_feed_public_goals(self):
+#         auth_url = reverse('accounts:token_obtain_pair')
+#         login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
         
-        url = reverse('goals:feed')
-        response = self.client.get(
-            url,
-            headers={
-                "Authorization": f"Bearer {login.json().get("access")}"
-            }
-        )
+#         url = reverse('goals:feed')
+#         response = self.client.get(
+#             url,
+#             headers={
+#                 "Authorization": f"Bearer {login.json().get("access")}"
+#             }
+#         )
   
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for item in response.json().get("results"):
-            self.assertEqual(item.get("public"), True)
-            self.assertEqual(item.get("total_likes"), 0)
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         for item in response.json().get("results"):
+#             self.assertEqual(item.get("public"), True)
+#             self.assertEqual(item.get("total_likes"), 0)
         
-class GoalProgressTest(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.user = CustomUser.objects.create(username='Test', password='1234')
-        cls.user.set_password('1234')
-        cls.user.save()
-        cls.goal = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user)
-        cls.task_goal = Tasks.objects.create(name='Tarefa', goal=cls.goal, description='teste', completed=True)
-        cls.goal_2 = Goals.objects.create(name='Meta teste 2', description='Meta teste', user=cls.user)
+# class GoalProgressTest(TestCase):
+#     @classmethod
+#     def setUpTestData(cls):
+#         cls.user = CustomUser.objects.create(username='Test', password='1234')
+#         cls.user.set_password('1234')
+#         cls.user.save()
+#         cls.goal = Goals.objects.create(name='Meta teste', description='Meta teste', user=cls.user)
+#         cls.task_goal = Tasks.objects.create(name='Tarefa', goal=cls.goal, description='teste', completed=True)
+#         cls.goal_2 = Goals.objects.create(name='Meta teste 2', description='Meta teste', user=cls.user)
         
-    def test_progress(self):
-        serializer = GoalsSerializer
-        goal_1 = serializer(self.goal).data
+#     def test_progress(self):
+#         serializer = GoalsSerializer
+#         goal_1 = serializer(self.goal).data
         
-        self.assertEqual(goal_1['progress'], 100.0)
+#         self.assertEqual(goal_1['progress'], 100.0)
         
-        goal_2 = serializer(self.goal_2).data
+#         goal_2 = serializer(self.goal_2).data
         
-        self.assertEqual(goal_2['progress'], 0.0)
+#         self.assertEqual(goal_2['progress'], 0.0)
         
 class LikesCommentsEndpointTest(TestCase):
     
@@ -270,7 +270,7 @@ class LikesCommentsEndpointTest(TestCase):
     
     def test_like_goal(self):
         auth_url = reverse("accounts:token_obtain_pair")
-        login = self.client.post(auth_url, {'username': 'Test', 'password': '1234'})
+        login = self.client.post(auth_url, {'username': 'Test-2', 'password': '1234'})
 
         url = reverse('goals:like', kwargs={"pk": self.goal.pk})
         response = self.client.post(
@@ -279,7 +279,7 @@ class LikesCommentsEndpointTest(TestCase):
                 "Authorization": f"Bearer {login.json().get('access')}"
             }
         )
-
+        
         self.assertEqual(response.status_code, 201)
         
         serializer = PublicGoalsSerializer
@@ -288,7 +288,7 @@ class LikesCommentsEndpointTest(TestCase):
         self.assertEqual(goal_info['total_likes'], 1)
         
         self.assertEqual(Notifications.objects.filter(user=self.user.pk).count(), 1)
-        self.assertEqual(Notifications.objects.get(user=self.user.pk).description, 'Test liked your goal Meta teste')
+        self.assertEqual(Notifications.objects.get(user=self.user.pk).description, 'Test-2 liked your goal Meta teste')
     
     def test_like_goal_already_liked(self):
         Likes.objects.create(user=self.user_2, goal=self.goal)

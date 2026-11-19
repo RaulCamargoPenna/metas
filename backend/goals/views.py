@@ -49,6 +49,7 @@ class PublicGoals(generics.ListAPIView):
     filterset_class = GoalsFilter
     
     def get_queryset(self):
+        print("Explain", Goals.objects.filter(public=True).prefetch_related("likes").explain())
         return Goals.objects.filter(public=True)
     
 class PublicGoalsDetails(generics.RetrieveAPIView):
@@ -117,7 +118,7 @@ class CommentsListCreateView(generics.ListCreateAPIView):
             return Response({'detail': 'Public Goal not found'}, status=404)
         
         instancia = query.first()
-        if instancia.goal.user != request.user:
+        if instancia.user != request.user:
             notify(
                 user_instance=instancia.user,
                 description=f'{request.user.username} commented your goal {instancia.name}'
