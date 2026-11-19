@@ -1,8 +1,10 @@
 from django.db import IntegrityError, transaction
-from django.db.models import Count
+from django.db.models import Count, Case, When, Value, BooleanField, Q, F
 from rest_framework import generics
 from rest_framework.views import APIView, Response
 
+from .services.progress import Goalprogress
+from .services.goals_information import get_goals_information
 from accounts.services.register_notification import notify
 from goals.filters import CommentsFilter, GoalsFilter, TasksFilter
 from goals.models import Comments, Goals, Likes, Tasks
@@ -16,20 +18,40 @@ from goals.serializers import (
 
 
 class GoalsListCreateView(generics.ListCreateAPIView):
-    serializer_class = GoalsSerializer
-    
+    filterset_class = GoalsFilter
     def get_queryset(self):
-        return Goals.objects.filter(user=self.request.user).order_by('-created_at')
+        return Goals.objects.filter(user=self.request.user).select_related("user").order_by('-created_at')
+    
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return PublicGoalsSerializer
+        return GoalsSerializer
     
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
     
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = get_goals_information(queryset=queryset, request=request)
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
 class GoalsRetrieveUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GoalsSerializer
-    filterset_class = GoalsFilter
     
     def get_queryset(self):
-        return Goals.objects.filter(user=self.request.user)
+        return get_goals_information(queryset=Goals.objects.filter(public=True), request=self.request)
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return PublicGoalsSerializer
+        return GoalsSerializer
     
 class TasksListCreateView(generics.ListCreateAPIView):
     serializer_class = TasksSerializer
@@ -49,14 +71,25 @@ class PublicGoals(generics.ListAPIView):
     filterset_class = GoalsFilter
     
     def get_queryset(self):
-        print("Explain", Goals.objects.filter(public=True).prefetch_related("likes").explain())
-        return Goals.objects.filter(public=True)
+        return Goals.objects.filter(public=True).order_by('-created_at')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = get_goals_information(queryset=queryset, request=request)
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     
 class PublicGoalsDetails(generics.RetrieveAPIView):
     serializer_class = PublicGoalsSerializer
     
     def get_queryset(self):
-        return Goals.objects.filter(public=True)
+        return get_goals_information(queryset=Goals.objects.filter(public=True), request=self.request) 
     
 class LikesCreateDeleteView(APIView):
     serializer_class = LikesSerializer
@@ -78,7 +111,7 @@ class LikesCreateDeleteView(APIView):
                             user_instance=instancia.goal.user,
                             description=f'{request.user.username} liked your goal {instancia.goal.name}'
                         )
-                    
+    
                 else:
                     context = {"detail": "Erro processing like.", "errors": serializer.errors}
                     status = 400
@@ -90,7 +123,7 @@ class LikesCreateDeleteView(APIView):
         
         
     def delete(self, request, pk):
-        queryset = Likes.objects.filter(goal=pk, user=self.request.user)
+        queryset = Likes.objects.filter(goal=pk, user=request.user)
         if queryset.exists():
             queryset.delete()
             context = {}

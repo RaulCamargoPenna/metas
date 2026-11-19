@@ -61,40 +61,28 @@ class TasksSerializer(serializers.ModelSerializer):
                 validated_data['completed_at'] = None            
             
         return super().update(instance, validated_data)
+  
     
 class PublicGoalsSerializer(serializers.ModelSerializer):
-    user = serializers.CharField(source='user.username', read_only=True)
+
+    owner = serializers.CharField(source='user.username', read_only=True)
     progress = serializers.SerializerMethodField(read_only=True)
     image = serializers.FileField(source='user.image', read_only=True)
-    tasks = TasksSerializer(many=True)
-    total_likes = serializers.IntegerField(source='likes.count')
-    already_liked = serializers.SerializerMethodField()
+    total_tasks = serializers.IntegerField()
+    total_likes = serializers.IntegerField()
+    already_liked = serializers.BooleanField()
     
     class Meta:
         model = Goals
-        fields = [field.name for field in model._meta.fields] + ['image', 'progress', 'tasks', 'total_likes', 'already_liked']
-        read_only_fields = ['user', 'progress', 'image', 'total_likes', 'already_liked']
-        
-    def is_valid(self, *, raise_exception=False):
-        if 'user' in self.initial_data:
-            logger.warning("Attempting to change user")
-            raise exceptions.PermissionDenied(detail={"user": 'O usuário não pode ser alterado'})
-        return super().is_valid(raise_exception=raise_exception)
+        fields = ['id', 'name', 'description', 'created_at', 'owner', 'image', 'progress', 'total_tasks', 'total_likes', 'already_liked', 'public']
+        read_only_fields = ['owner', 'image', 'progress', 'total_tasks', 'total_likes', 'already_liked', 'public']
     
     def get_progress(self, instance):
-        
-        tasks = instance.tasks.aggregate(total=Count("id"), completed_tasks=Count('id', filter=Q(completed=True)))
-        progress = Goalprogress(total=tasks['total'], completed=tasks['completed_tasks'])
-
+        progress = Goalprogress(
+            total=instance.total_tasks,
+            completed=instance.completed_tasks
+        )
         return progress.progress()
-    
-    def get_already_liked(self, instance):
-        request = self.context.get('request')
-        if request and hasattr(request, 'user'):
-            liked = instance.likes.filter(user=request.user)
-            return liked.exists()
-        
-        return False
     
 class LikesSerializer(serializers.ModelSerializer):
     user = serializers.CharField(source='user.username', read_only=True)

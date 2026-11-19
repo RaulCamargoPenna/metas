@@ -136,15 +136,15 @@ LOGGING = {
             "level": os.getenv("LOGGING_LEVEL"),
             "formatter": "simple",
         },
-        'logtail': {
-            'class': 'logtail.LogtailHandler',
-            'source_token': os.getenv("TOKEN_BETTER_STACK"),
-            'host': os.getenv("INGESTING_HOST"),
-        },
+        # 'logtail': {
+        #     'class': 'logtail.LogtailHandler',
+        #     'source_token': os.getenv("TOKEN_BETTER_STACK"),
+        #     'host': os.getenv("INGESTING_HOST"),
+        # },
     },
     "loggers": {
         "": {
-            "handlers": ["file", "console", "logtail"],
+            "handlers": ["file", "console"], #, "logtail"],
             "level": os.getenv("LOGGING_LEVEL"),
             "propagate": True,
         },
