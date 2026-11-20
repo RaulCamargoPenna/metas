@@ -1,7 +1,8 @@
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Case, When, Value, BooleanField, Q, F
 from rest_framework import generics
 from rest_framework.views import APIView, Response
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 from .services.progress import Goalprogress
 from .services.goals_information import get_goals_information
@@ -73,6 +74,7 @@ class PublicGoals(generics.ListAPIView):
     def get_queryset(self):
         return Goals.objects.filter(public=True).order_by('-created_at')
 
+    @method_decorator(cache_page(60))
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = get_goals_information(queryset=queryset, request=request)
@@ -89,7 +91,12 @@ class PublicGoalsDetails(generics.RetrieveAPIView):
     serializer_class = PublicGoalsSerializer
     
     def get_queryset(self):
-        return get_goals_information(queryset=Goals.objects.filter(public=True), request=self.request) 
+        return get_goals_information(queryset=Goals.objects.filter(public=True), request=self.request)
+    
+    def get_object(self):
+        alo = self.get_queryset().filter(id='5024df7e-83b0-423e-87de-5aee90d9be5d')
+        print('Alooooo', alo)
+        return super().get_object()
     
 class LikesCreateDeleteView(APIView):
     serializer_class = LikesSerializer
