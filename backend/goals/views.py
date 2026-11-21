@@ -1,11 +1,11 @@
 from django.db import IntegrityError, transaction
 from rest_framework import generics
 from rest_framework.views import APIView, Response
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from django.core.cache import cache
+import hashlib
 
-from .services.progress import Goalprogress
 from .services.goals_information import get_goals_information
+from .services.cache_invalidation import invalidate_public_goals
 from accounts.services.register_notification import notify
 from goals.filters import CommentsFilter, GoalsFilter, TasksFilter
 from goals.models import Comments, Goals, Likes, Tasks
@@ -74,29 +74,35 @@ class PublicGoals(generics.ListAPIView):
     def get_queryset(self):
         return Goals.objects.filter(public=True).order_by('-created_at')
 
-    @method_decorator(cache_page(60))
     def list(self, request, *args, **kwargs):
+        revision = cache.get("public-goals:revision") or 'initial'
+        url = hashlib.sha256(request.build_absolute_uri().encode()).hexdigest()
+        key = f"public-goals:{revision}:user:{request.user.pk}:{url}"
+
+        data = cache.get(key)
+        
+        if data is not None:
+            return Response(data)
+        
         queryset = self.filter_queryset(self.get_queryset())
         queryset = get_goals_information(queryset=queryset, request=request)
         
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+            information = self.get_paginated_response(serializer.data)
+        else:
+            information = self.get_serializer(queryset, many=True)
+            
+        response = Response(information.data)
+        cache.set(key, response.data, timeout=60)
+        return response
     
 class PublicGoalsDetails(generics.RetrieveAPIView):
     serializer_class = PublicGoalsSerializer
     
     def get_queryset(self):
         return get_goals_information(queryset=Goals.objects.filter(public=True), request=self.request)
-    
-    def get_object(self):
-        alo = self.get_queryset().filter(id='5024df7e-83b0-423e-87de-5aee90d9be5d')
-        print('Alooooo', alo)
-        return super().get_object()
     
 class LikesCreateDeleteView(APIView):
     serializer_class = LikesSerializer
@@ -113,12 +119,15 @@ class LikesCreateDeleteView(APIView):
                     context = {"detail": 'Success.'}
                     status = 201
                     
+                    transaction.on_commit(invalidate_public_goals)
+
                     if instancia.goal.user != request.user:
                         notify(
                             user_instance=instancia.goal.user,
                             description=f'{request.user.username} liked your goal {instancia.goal.name}'
                         )
-    
+
+
                 else:
                     context = {"detail": "Erro processing like.", "errors": serializer.errors}
                     status = 400
@@ -133,6 +142,7 @@ class LikesCreateDeleteView(APIView):
         queryset = Likes.objects.filter(goal=pk, user=request.user)
         if queryset.exists():
             queryset.delete()
+            transaction.on_commit(invalidate_public_goals)
             context = {}
             status = 204
         else:
