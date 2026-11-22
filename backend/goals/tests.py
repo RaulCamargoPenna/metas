@@ -10,6 +10,7 @@ from rest_framework.test import APITestCase
 from accounts.models import CustomUser, Notifications
 from goals.models import Goals, Tasks, Likes, Comments
 from goals.serializers import GoalsSerializer, PublicGoalsSerializer
+from django.core.cache import cache
 
 
 class UserGoalsTestCase(TestCase):
@@ -390,21 +391,36 @@ class TestQuerys(APITestCase):
         }
         
     def create_goal(self, number, user):
-        goal = Goals.objects.create(
-            name=f'Test {number}',
-            description=f"test {number}",
-            user=user,
-            public=True
-        )
-        
-        Tasks.objects.create(
-            name=f'Task {number}',
-            description=f'task {number}',
-            goal=goal
-        )
-        
-        Likes.objects.create(user=user, goal=goal)
-        Comments.objects.create(user=user, goal=goal, comment='test comment')
+        with self.captureOnCommitCallbacks(execute=True):
+            url = reverse('goals:goals')
+            data = {'name': f'Teste {number}', 'description': f'test {number}', 'public': True}
+            
+            post_response = self.client.post(
+                url,
+                data=data,
+                headers=self.headers,
+                format='json'
+            )
+            self.assertEqual(post_response.status_code, 201)
+
+            url = reverse('goals:tasks')
+            response = self.client.post(
+                path=url,
+                data={
+                    'name': f'Task {number}',
+                    'description': f'task {number}',
+                    'goal': post_response.data.get("id")
+                },
+                headers=self.headers,
+                format='json'
+            )
+            self.assertEqual(response.status_code, 201)
+
+            url = reverse('goals:like', kwargs={"pk": post_response.data.get("id")})
+            response = self.client.post(
+                url, 
+                headers=self.headers
+            )
 
     def measure_queries(self, url):
         with CaptureQueriesContext(connection=connection) as queries:
@@ -416,15 +432,15 @@ class TestQuerys(APITestCase):
     def test_feed_public_goals(self):
         url = reverse('goals:feed')
         
-        self.create_goal(1, self.user_2)
+        self.create_goal(1, self.user)
         
         results_1, queries_1 = self.measure_queries(url=url)
 
         for i in range(2, 6):
-            self.create_goal(i,self.user_2)
+            self.create_goal(i, self.user)
             
         results_5, queries_5 = self.measure_queries(url=url)
-        
+
         self.assertEqual(results_1, 1)
         self.assertEqual(results_5, 5)
         
@@ -446,3 +462,17 @@ class TestQuerys(APITestCase):
         self.assertEqual(results_5, 5)
         
         self.assertEqual(queries_1, queries_5)
+        
+    def test_cache_feed_public_goals(self):
+        url = reverse('goals:feed')
+        
+        self.create_goal(1, self.user_2)
+        
+        results_1, queries = self.measure_queries(url=url)
+        
+        self.assertEqual(results_1, 1)
+        
+        results_2_cache, queries_cache = self.measure_queries(url=url)
+    
+        self.assertEqual(results_2_cache, 1)
+        self.assertLess(queries_cache, queries)

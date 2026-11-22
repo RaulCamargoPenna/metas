@@ -30,6 +30,13 @@ class GoalsListCreateView(generics.ListCreateAPIView):
     
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+
+        if response.data.get('public') is True:
+            transaction.on_commit(invalidate_public_goals)
+        return response
     
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -47,12 +54,18 @@ class GoalsRetrieveUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GoalsSerializer
     
     def get_queryset(self):
-        return get_goals_information(queryset=Goals.objects.filter(public=True), request=self.request)
+        return get_goals_information(queryset=Goals.objects.filter(user=self.request.user), request=self.request)
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return PublicGoalsSerializer
         return GoalsSerializer
+    
+    def update(self, request, *args, **kwargs):
+        response =  super().update(request, *args, **kwargs)
+        transaction.on_commit(invalidate_public_goals)
+            
+        return response
     
 class TasksListCreateView(generics.ListCreateAPIView):
     serializer_class = TasksSerializer
@@ -60,12 +73,24 @@ class TasksListCreateView(generics.ListCreateAPIView):
     
     def get_queryset(self):
         return Tasks.objects.filter(goal__user=self.request.user)
+    
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        if response.status_code == 201:
+            transaction.on_commit(invalidate_public_goals)
+        return response
 
 class TasksRetrieveUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TasksSerializer
     
     def get_queryset(self):
         return Tasks.objects.filter(goal__user=self.request.user)
+    
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+        if self.get_object().goal.public is True:
+            transaction.on_commit(invalidate_public_goals)
+        return response
 
 class PublicGoals(generics.ListAPIView):
     serializer_class = PublicGoalsSerializer
