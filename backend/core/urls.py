@@ -9,6 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path(f'api/{API_VERSION}/' , include("accounts.urls")),
     path(f'api/{API_VERSION}/', include("goals.urls")),
+    path(f'api/{API_VERSION}/', include('django_prometheus.urls')),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

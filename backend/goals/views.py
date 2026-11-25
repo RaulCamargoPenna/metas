@@ -16,6 +16,9 @@ from goals.serializers import (
     PublicGoalsSerializer,
     TasksSerializer,
 )
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
 
 
 class GoalsListCreateView(generics.ListCreateAPIView):
@@ -112,7 +115,9 @@ class PublicGoals(generics.ListAPIView):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = get_goals_information(queryset=queryset, request=request)
         
-        page = self.paginate_queryset(queryset)
+        with tracer.start_as_current_span("paginar_feed") as span:
+            page = self.paginate_queryset(queryset)
+            
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             information = self.get_paginated_response(serializer.data)

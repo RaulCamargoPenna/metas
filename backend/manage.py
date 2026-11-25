@@ -7,6 +7,12 @@ import sys
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    
+    from opentelemetry.instrumentation.auto_instrumentation import initialize
+    initialize()
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
