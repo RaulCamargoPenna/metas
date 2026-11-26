@@ -6,5 +6,24 @@ services:
     volumes:
       - './prometheus.yml:/etc/prometheus/prometheus.yml:ro'
       - 'prometheus-data:/prometheus'
+
+  grafana:
+    image: grafana/grafana:13.3.2-ubuntu
+    ports:
+      - "3000:3000"
+    volumes:
+      - 'grafana-data:/var/lib/grafana'
+
+  tempo:
+    image: grafana/tempo:3.1.1
+    ports:
+      - "4317:4317"
+    volumes:
+      - './tempo.yml:/etc/tempo.yml:ro'
+      - 'tempo-data:/data/tempo'
+    command: "-config.file=/etc/tempo.yml"
+
 volumes:
   prometheus-data:
+  grafana-data:
+  tempo-data:

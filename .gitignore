@@ -1,9 +1,12 @@
 .venv
 *.sqlite3
+backend/.seed-credentials.txt
+backend/goals/management
 .env
 *.log
 media
 .node_modules
+__pycache__/
 
 # Logs
 logs
