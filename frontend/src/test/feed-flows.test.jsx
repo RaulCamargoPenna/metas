@@ -196,19 +196,38 @@ describe('feed de metas públicas', () => {
   it('permite remover uma curtida antiga após a API indicar duplicidade', async () => {
     signedIn()
     const browser = userEvent.setup()
-    mockFetch({
+    let detailCalls = 0
+    const fetchMock = mockFetch({
       'GET /api/v1/feed': json({ results: [goal], next: null }),
       'POST /api/v1/goals/public-1/like': json({ detail: 'UNIQUE constraint failed: unique_like' }, 400),
       'DELETE /api/v1/goals/public-1/like': new Response(null, { status: 204 }),
-      'GET /api/v1/public/goal/public-1': json({ ...goal, total_likes: 2 }),
+      'GET /api/v1/public/goal/public-1': () => {
+        detailCalls += 1
+        return json({ ...goal, already_liked: detailCalls === 1, total_likes: detailCalls === 1 ? 4 : 3 })
+      },
     })
     renderAt('/feed')
     await screen.findByRole('heading', { name: 'Correr 10 km' })
     await browser.click(screen.getByRole('button', { name: 'Curtir meta' }))
     expect(await screen.findByRole('button', { name: 'Remover curtida' })).toBeInTheDocument()
-    expect(screen.getByLabelText('3 curtidas')).toBeInTheDocument()
+    expect(await screen.findByLabelText('4 curtidas')).toBeInTheDocument()
     await browser.click(screen.getByRole('button', { name: 'Remover curtida' }))
-    expect(await screen.findByLabelText('2 curtidas')).toBeInTheDocument()
+    expect(await screen.findByLabelText('3 curtidas')).toBeInTheDocument()
+    expect(fetchMock.mock.calls.filter(([input]) => new URL(input, window.location.origin).pathname === '/api/v1/public/goal/public-1')).toHaveLength(2)
+  })
+
+  it('informa que a contagem pode estar antiga quando a curtida já existe e o detalhe falha', async () => {
+    signedIn()
+    const browser = userEvent.setup()
+    mockFetch({
+      'GET /api/v1/feed': json({ results: [goal], next: null }),
+      'POST /api/v1/goals/public-1/like': json({ detail: 'UNIQUE constraint failed: unique_like' }, 400),
+      'GET /api/v1/public/goal/public-1': json({ detail: 'Falha temporária.' }, 503),
+    })
+    renderAt('/feed')
+    await browser.click(await screen.findByRole('button', { name: 'Curtir meta' }))
+    expect(await screen.findByRole('button', { name: 'Remover curtida' })).toHaveAttribute('aria-pressed', 'true')
+    expect(await screen.findByRole('alert')).toHaveTextContent('não foi possível atualizar a contagem')
   })
 
   it('mostra estado vazio e erro de carregamento', async () => {

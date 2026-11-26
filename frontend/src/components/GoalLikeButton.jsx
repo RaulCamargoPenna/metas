@@ -57,6 +57,19 @@ export function GoalLikeButton({ goalId, totalLikes = 0, alreadyLiked = false })
           const data = await response.json()
           if (isDuplicateLike(data)) {
             setLiked(true)
+            try {
+              const detailResponse = await apiRequest(`/public/goal/${goalId}`)
+              if (!detailResponse.ok) throw new Error('Não foi possível atualizar a contagem de curtidas.')
+              const currentLike = await detailResponse.json()
+              if (currentLike.already_liked) {
+                setCount(Math.max(0, Number(currentLike.total_likes) || 0))
+              } else {
+                setError('Sua curtida já estava registrada, mas os dados da meta ainda estão desatualizados.')
+              }
+            } catch (caughtError) {
+              if (caughtError instanceof SessionExpiredError) throw caughtError
+              setError('Sua curtida já estava registrada, mas não foi possível atualizar a contagem.')
+            }
             return
           }
           throw new Error(typeof data.detail === 'string' ? data.detail : 'Não foi possível curtir a meta.')
